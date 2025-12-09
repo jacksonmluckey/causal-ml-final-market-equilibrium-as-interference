@@ -1,0 +1,11 @@
+project:
+  type: default
+
+filters:
+  - _macros.lua
+
+format:
+  html:
+    embed-resources: true
+  pdf:
+    include-in-header: _macros.tex
