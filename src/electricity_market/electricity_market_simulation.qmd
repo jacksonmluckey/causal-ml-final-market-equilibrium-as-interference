@@ -1,0 +1,267 @@
+---
+header-includes:
+- \newcommand{\Uniform}{\text{Uniform}}
+- \newcommand{\DemandPrice}{P_{\text{demand}}}
+- \newcommand{\DemandQuantity}{Q_{\text{demand}}}
+- \newcommand{\CapacityUnit}{\text{ MW}}
+- \newcommand{\CostUnit}{\text{ \$/MWh}}
+- \newcommand{\Capacity}{\text{Cap}}
+- \newcommand{\Supply}{Q_{\text{supply}}}
+- \newcommand{\ren}{{\text{ren}}}
+- \newcommand{\non}{\text{non}}}
+---
+
+
+```{python}
+import numpy as np
+```
+
+# Model Components
+
+## Market Participants
+
+### Renewable Generators (Treatment Group)
+
+- Number: $n_{\non} = 100$
+- Capacity: $\Capacity_i \sim \Uniform[10,50] \CapacityUnit$
+- Operating cost: $c_i \sim \Uniform[20,60] \CostUnit$
+- Receives subsidy: $S_i$
+
+### Non-Renewable Generators (Control Group)
+
+- Number: $n_{\ren} = 200$
+- Capacity: $\Capacity_j \sim \Uniform[20,100] \CapacityUnit$
+- Operating cost: $c_j \sim \Uniform[30,90] \CostUnit$
+- No subsidy
+
+### Generate the Market Participants
+
+```{python}
+n_ren = 100
+n_non = 200
+
+renewables = {
+    'capacity': np.random.uniform(10, 50, n_ren),
+    'cost': np.random.uniform(20, 60, n_ren)
+}
+
+non_renewables = {
+    'capacity': np.random.uniform(20, 100, n_non),
+    'cost': np.random.uniform(30, 90, n_non)
+}
+```
+
+## Demand Curve
+
+Daily demand with random context:
+
+$$
+\DemandPrice(Q,A) = A \times Q^{-\alpha}
+$$
+
+where:
+
+- $A \sim \text{LogNormal}(4.5,0.22)$ is the daily demand shock
+- $\alpha = 0.1$ is the demand elasticity
+- $Q$ is quantity demanded in MWh
+
+Inverse demand (quantity as function of price):
+
+$$
+\DemandQuantity(P, A) = \left( \frac{A}{P} \right)^{\frac{1}{\alpha}}
+$$
+
+```{python}
+# Demand parameters
+alpha = 0.1
+mu_A = 4.5
+sigma_A = 0.2
+
+def draw_context():
+    """Draw daily demand context"""
+    return np.random.lognormal(mu_A, sigma_A)
+
+def demand_quantity(price, A, alpha=0.1):
+    """Quantity demanded at given price and context"""
+    return (A / price) ** (1 / alpha)
+
+def demand_price(quantity, A, alpha=0.1):
+    """Inverse demand: price at given quantity"""
+    return A * quantity ** (-alpha)
+```
+
+## Supply Decisions
+
+- Renewable generator $i$ participation: $Z_i = \mathbb{1} \{ P^* > c_i - S_i \}$
+- Renewable generator $i$ supply: $q_i = Z_i \times \Capacity_i$
+
+- Non-renewable generator $j$ participation: $Z_j = \mathbb{1} \{ P^* > c_j \}$
+- Non-renewable generator $j$ supply: $q_j = Z_j \times \Capacity_j$
+
+$$
+\Supply(P, \{ S_i \}) = \sum_{i = 1}^{n_{\ren}} q_i (P, S_i) + \sum_{i = 1}^{n_{\non}} q_j (P)
+$$
+
+```{python}
+def compute_supply(price, subsidies, renewables, non_renewables):
+    """Compute total supply at given price"""
+    # Renewable supply
+    effective_cost_ren = renewables['cost'] - subsidies
+    ren_participate = price > effective_cost_ren
+    Q_ren = np.sum(renewables['capacity'] * ren_participate)
+
+    # Non-renewable supply
+    non_participate = price > non_renewables['cost']
+    Q_non = np.sum(non_renewables['capacity'] * non_participate)
+
+    Q_total = Q_ren + Q_non
+
+    return Q_total, Q_ren, Q_non
+```
+
+## Market Clearing
+
+Find price $P^*$ where supply equals demand: $\Supply(P^*, \{ S_i \}) = \DemandQuantity(P^*, A)$
+
+```{python}
+from scipy.optimize import brentq
+
+def find_clearing_price(A, subsidies, renewables, non_renewables, 
+                       alpha=0.1, price_bounds=(10, 200)):
+    """Find market clearing price"""
+    def excess_supply(price):
+        Q_supply, _, _ = compute_supply(price, subsidies, renewables, non_renewables)
+        Q_demand = demand_quantity(price, A, alpha)
+        return Q_supply - Q_demand
+
+    try:
+        P_star = brentq(excess_supply, price_bounds[0], price_bounds[1])
+    except ValueError:
+        # If no equilibrium in range, use boundary
+        P_star = price_bounds[0] if excess_supply(price_bounds[0]) < 0 else price_bounds[1]
+
+    return P_star
+
+```
+
+## Treatment Assignment
+
+Baseline subsidy with perturbations:
+
+$S_{it} = s_t + \zeta \epsilon_{it}$
+
+where:
+
+- $s_t$ is the baseline subsidy on day $t$
+- $\zeta > 0$ is the perturbation magnitude (small)
+- $\epsilon_{it} \sim \Uniform \{ −1,+1 \}$ is the random shock
+
+
+```{python}
+def assign_subsidies(baseline_s, n_generators, zeta=2.0):
+    """Assign subsidies with mean-zero perturbations"""
+    epsilons = np.random.choice([-1, 1], size=n_generators)
+    subsidies = baseline_s + zeta * epsilons
+    # Ensure non-negative
+    subsidies = np.maximum(subsidies, 0)
+    return subsidies, epsilons
+```
+
+## Market Operator Objective
+
+### Maximizing Renewable Generation Minus Costs
+
+$\lambda$ weights the cost of subsidies.
+
+$u_A(s) = \mathbb{E}_{A} [Q_{\ren}(s, A) - \lambda s Q_{\ren}(s, A)] = \mathbb{E}_{A} [Q_{\ren}(s, A) (1 - \lambda s)]$
+
+
+```{python}
+def compute_platform_utility(Q_ren, subsidy_level, lambda_cost=0.5):
+    """Platform utility: renewable generation minus subsidy cost"""
+    return Q_ren * (1 - lambda_cost * subsidy_level)
+
+def compute_subsidy_cost(Q_ren, subsidy_level):
+    """Total subsidy cost"""
+    return subsidy_level * Q_ren
+```
+
+# Simulation
+
+## One Day
+
+```{python}
+def simulate_one_day(t, baseline_s, zeta, renewables, non_renewables, 
+                     alpha=0.1, lambda_cost=0.5):
+    """
+    Simulate one day of market operation
+
+    Returns:
+        dict with outcomes: price, quantities, utility, perturbations
+    """
+    # Draw context
+    A_t = draw_context()
+
+    # Assign subsidies with perturbations
+    subsidies, epsilons = assign_subsidies(baseline_s, n_ren, zeta)
+
+    # Find market clearing price
+    P_star = find_clearing_price(A_t, subsidies, renewables, non_renewables, alpha)
+
+    # Compute quantities at clearing price
+    Q_total, Q_ren, Q_non = compute_supply(P_star, subsidies, renewables, non_renewables)
+
+    # Compute utility
+    utility = compute_platform_utility(Q_ren, baseline_s, lambda_cost)
+
+    # Record outcomes
+    outcomes = {
+        'day': t,
+        'context': A_t,
+        'price': P_star,
+        'Q_total': Q_total,
+        'Q_renewable': Q_ren,
+        'Q_non_renewable': Q_non,
+        'baseline_subsidy': baseline_s,
+        'subsidies': subsidies,
+        'epsilons': epsilons,
+        'utility': utility,
+        'subsidy_cost': baseline_s * Q_ren
+    }
+
+    return outcomes
+
+def simulate_market(T, baseline_s, zeta, renewables, non_renewables,
+                   alpha=0.1, lambda_cost=0.5):
+    """
+    Simulate T days of market operation
+
+    Args:
+        T: number of days
+        baseline_s: baseline subsidy level ($/MWh)
+        zeta: perturbation magnitude
+        renewables: dict with 'capacity' and 'cost' arrays
+        non_renewables: dict with 'capacity' and 'cost' arrays
+        alpha: demand elasticity
+        lambda_cost: platform cost weight
+
+    Returns:
+        list of daily outcomes
+    """
+    results = []
+
+    for t in range(T):
+        outcome = simulate_one_day(
+            t, baseline_s, zeta, renewables, non_renewables,
+            alpha, lambda_cost
+        )
+        results.append(outcome)
+
+    return results
+```
+
+## Demonstration
+
+```{python}
+simulate_market(100, 10, 0.1, renewables, non_renewables)
+```
