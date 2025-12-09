@@ -19,14 +19,14 @@ import numpy as np
 
 - Number: $n_{\non} = 100$
 - Capacity: $\Capacity_i \sim \Uniform[10,50] \CapacityUnit$
-- Operating cost: $c_i \sim \Uniform[20,60] \CostUnit$
+- Operating cost: $c_i \sim \Uniform[30,100] \CostUnit$
 - Receives subsidy: $S_i$
 
 ### Non-Renewable Generators (Control Group)
 
 - Number: $n_{\ren} = 200$
 - Capacity: $\Capacity_j \sim \Uniform[20,100] \CapacityUnit$
-- Operating cost: $c_j \sim \Uniform[30,90] \CostUnit$
+- Operating cost: $c_j \sim \Uniform[20,60] \CostUnit$
 - No subsidy
 
 ### Generate the Market Participants
@@ -37,12 +37,12 @@ n_non = 200
 
 renewables = {
     'capacity': np.random.uniform(10, 50, n_ren),
-    'cost': np.random.uniform(20, 60, n_ren)
+    'cost': np.random.uniform(30, 100, n_ren)
 }
 
 non_renewables = {
     'capacity': np.random.uniform(20, 100, n_non),
-    'cost': np.random.uniform(30, 90, n_non)
+    'cost': np.random.uniform(20, 60, n_non)
 }
 ```
 
@@ -136,7 +136,6 @@ def find_clearing_price(A, subsidies, renewables, non_renewables,
         P_star = price_bounds[0] if excess_supply(price_bounds[0]) < 0 else price_bounds[1]
 
     return P_star
-
 ```
 
 ## Treatment Assignment
@@ -257,7 +256,7 @@ def simulate_market(T, baseline_s, zeta, renewables, non_renewables,
 ## Demonstration
 
 ```{python}
-simulate_market(100, 10, 0.1, renewables, non_renewables)
+simulate_market(10, 10, 0.1, renewables, non_renewables)
 ```
 
 # Implementing Method
@@ -635,7 +634,7 @@ def learn_optimal_subsidy(renewables, non_renewables,
                          eta=0.5,  # Step size
                          s_min=0.0,  # Min subsidy
                          s_max=50.0,  # Max subsidy
-                         lambda_cost=0.5,  # Cost weight
+                         lambda_cost=0,  # Cost weight
                          alpha=0.1):  # Demand elasticity
     """
     Learn optimal subsidy via online gradient ascent
@@ -733,12 +732,12 @@ n_non = 200
 
 renewables = {
     'capacity': np.random.uniform(10, 50, n_ren),
-    'cost': np.random.uniform(20, 60, n_ren)
+    'cost': np.random.uniform(30, 90, n_ren)
 }
 
 non_renewables = {
     'capacity': np.random.uniform(20, 100, n_non),
-    'cost': np.random.uniform(30, 90, n_non)
+    'cost': np.random.uniform(20, 60, n_non)
 }
 
 # Run learning algorithm
@@ -746,13 +745,13 @@ learning_history = learn_optimal_subsidy(
     renewables=renewables,
     non_renewables=non_renewables,
     T_total=500,  # 500 days total
-    batch_size=50,  # 50 days per batch → 10 updates
+    batch_size=1,  # 50 days per batch → 10 updates
     s_init=20.0,  # Start at $20/MWh
     zeta=2.0,  # $2 perturbations
     eta=0.5,  # Step size
     s_min=0.0,
     s_max=50.0,
-    lambda_cost=0.5,
+    lambda_cost=0.05,
     alpha=0.1
 )
 
@@ -810,5 +809,4 @@ def plot_learning_results(learning_history):
 
 # Plot results
 plot_learning_results(learning_history)
-
 ```
