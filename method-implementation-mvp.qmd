@@ -1,0 +1,156 @@
+---
+title: "MVP Implementation of Market Equilibrium as Interference"
+format:
+    html:
+        embed-resources: true
+---
+
+# Model of Market
+
+## Demand
+
+Demand $D$ is drawn from $D \sim F_a$, where $a$ is a particular global state $A \in \mathbfcal{A}$. Demand scales proportionally with market size (number of potential suppliers?) $n$.
+
+$d_a$ is the expected demand per supplier when the global state is $a$.
+
+As $n$ increases, market behavior can be characterized by deterministic rules as individual supplier randomness averages out, which enables mean-field analysis. Only global randomness from the global state $A$ remains.
+
+### Concentration Property
+
+(3.1):
+
+$$
+\mathop{\lim}_{n \rightarrow \infty} \mathbb{E} \left[ \left( \frac{D}{n} - d_a \right)^2 | A = a \right] = 0
+$$
+
+After scaling demand by market size ($\frac{D}{n}$), the variance shrinks to 0 as $n$ grows. In other words, in large markets, expected demand per supplier $d_a$ becomes predictable.
+
+### Tail Property
+
+(3.2):
+
+$\mathbb{P} \left( \frac{D}{n} \notin \left[ \frac{d_a}{2}, 2 d_a \right] | A = a \right) = o \left( \frac{1}{n} \right)$
+
+Rewritten using notation that I find clearer:
+
+$\mathop{\lim}_{n \rightarrow \infty} n \times \mathbb{P} \left( \frac{D}{n} \notin \left[ \frac{d_a}{2}, 2 d_a \right] | A = a \right) = 0$
+
+The probability that scaled demand is greater than $2 d_a$ or less than $\frac{d_a}{2}$ decreases faster than $\frac{1}{n}$. In other words, extreme deviations become exponentially unlikely.
+
+## Supply
+
+For each time period:
+
+1. The platform choses a payment distribution $\pi$, draws individual payments $P_i \sim \pi$ (iid), and provides $P_i$ and $\pi$ to all suppliers.
+2. Each supplier decides whether or not to join the market. The $i$-th supplier's decision is $Z_i$. The toal number of active suppliers for the time period is $T = \sum_{i = 1}^{n} Z_i$.
+3. Demand $D$ is randomly allocated among the $T$ active suppliers.
+
+### Demand per Active Supplier
+
+The expected demand per active supplier with the payment regime $\pi$ is given by:
+
+$\Omega (d, t) = \mathbb{E} [S_i | D = d, T = t]$
+
+where $S_i$ is the amount of demand that the $i$-th supplier serves if active. In equilibrium, all active suppliers have the same expected allocation.
+
+As the market grows large ($n \rightarrow \infty$), we can switch to the mean-field and simplify to:
+
+$\Omega (d, t) = \omega \left( \frac{d}{t} \right) + l(d, t)$
+
+where $\omega \left( \frac{d}{t} \right)$ is a regular allocation function and $l(d, t)$ is an error term that decreases as $d$ and $t$ grow.
+
+Intuitively, allocation per active supplier simplifies to the ratio between demand and the number of active suppliers.
+
+The error function $l$ is bounded:
+
+$| l(d, t) | = o \left( \frac{1}{\sqrt{t}} + \frac{1}{\sqrt{d}} \right)$
+
+#### Defining Regular Allocation Function $\omega$
+
+- Smooth: no sudden jumps
+- Concave: the marginal difficultly of matching an additional unit of demand cannot decrease
+- Non-decreasing: the more demand per supplier, the more demand each supplier must be allocated
+- $\lim_{x \rightarrow 0} \omega(x) = 0$: If there is no demand, suppliers cannot be allocated demand
+- $\lim_{x \rightarrow \infty} \omega(x) \leqslant 1$: Suppliers cannot supply more than their capacity
+- $\lim_{x \rightarrow 0} \omega'(x) \leqslant 1$[^allocation_bounded_by_demand]: when demand is low relative to supply, the allocation rate cannot grow faster than demand
+
+[^allocation_bounded_by_demand]: The total demand served across all active suppliers is $t \times \omega \left(\frac{d}{t}\right) \leq d$ (total demand served is bounded by total demand). Dividing both sides by $t$ gives us $\omega \left(\frac{d}{t}\right) \leq \frac{d}{t} \leq x$, so we can substitute $x$ into $\omega$ and get $\omega(x) \leqslant x$.
+
+This allows mean-field analysis and capturing all interference in the global statistic $\frac{d}{t}$.
+
+### Supplier Choice to be Active 
+
+#### Supplier Choice Behavior
+
+(3.6):
+
+Supplier $i$ becoming active is given by:
+
+$$
+\mu_{a}^{(n)} (\pi) = \mathbb{P}_{\pi} [Z_i = 1 | A = a] = \mathbb{E} [f_{B_i} (P_i \mathbb{E}_{\pi} [\Omega (D, T) | A = a]) | A = a]
+$$
+
+where:
+
+- $T$ is the equilibrium number of active suppliers.
+- $\mathbb{E}_{\pi} [\Omega (D, T) | A = a]$ is the expected amount of demand served per provider given the platform's choice of $\pi$.
+- $P_i \mathbb{E}_{\pi} [\Omega (D, T) | A = a]$ is the expected revenue of the $i$-th supplier in equilibrium.
+- $B_i$ captures the heterogenity across suppliers, such as differents costs or estimated expected revenue. We assume $B_i$ is independently and identically distributed from $\mathbfcal{B}$, which can depend on $A$.
+- $f_b(x)$ is the choice function of a supplier becoming active with expected equilibrium revenue $x$ and $B_i = b$. (From assumption 2) $x$ must be $[0, 1]$, the choice function must be monotonically non-decreasing, and must have a uniformly bounded second derivative.
+
+The supplier only considers the average behavior of other marketplace participants when deciding whether or not to enter. This makes their decision stationary, which is required to use the mean-field.
+
+#### Logistic Choice Function
+
+(3.7):
+
+Using the logit model fulfills the requirements for the choice function. Hence our choice function is:
+
+$\mathbb{P}[Z_i = 1 | P_i, \pi, A] = \frac{1}{1 + e^{-\alpha (P_i \mathbb{E}_{\pi} [\Omega (D, T) | A] - B_i)}}$
+
+where:
+
+- $\alpha > 0$ is a parameter that represents the sensitivity of a supplier's decision to enter to whether or not expected revenue exceeds expected costs. In the limit as $\alpha \rightarrow \infty$, $\mathbb{P}[Z_i = 1 | P_i, \pi, A]$ only returns 0 or 1. In other words, a higher value of $\alpha$ makes the suppliers decision to enter the market deterministic on whether expected revenue > expected costs.
+- $B_i$ is supplier $i$'s break-even cost threshold. $B_i$ takes values in $\mathbb{R}_{+}$.
+
+## Platform Utility
+
+(3.8):
+
+The platform's utility is the difference between revenue and payments:
+
+$$
+U = R(D, T) - \sum_{i = 1}^{n} P_i Z_i S_i
+$$
+
+For each supplier $i$, $P_i Z_i S_i$ is their payment rate times the amount they supplied ($S_i$ if $Z_i = 1$, otherwise 0).
+
+(3.9):
+
+The revenue function $R(D, T)$ is assumed to have the structure:
+
+$$
+R(d, t) = \left( r \left( \frac{d}{t} \right) - l(d, t) \right) t
+$$
+
+where $r \left( \frac{d}{t} \right)$ is a smooth function with bounded derivatives and $l(d, t)$ is an error function bounded by:
+
+$$
+| l(d, t) | = o \left( \frac{1}{\sqrt{t}} + \frac{1}{\sqrt{d}} \right)
+$$
+
+$r \left( \frac{d}{t} \right)$ is revenue per supplier.
+
+Intuitively, revenue scales linearly with the number of active suppliers but revenue per supplier depends on the supply-demand ratio.
+
+If the platform receives a fixed payment $\gamma$ per unit of demand served, then $R(D, T) = \gamma (T \Omega(D, T))$.
+
+### Normalized Utility
+
+(3.10):
+
+$$
+u_{a}^{(n)}(\pi) = \frac{1}{n} \mathbb{E}_n \left[ U | A = a \right] \quad \text{and} \quad u^{(n)}(\pi) = \mathbb{E}_n \left[ u_{A}^{(n)} (\pi) \right]
+$$
+
+The normalized utility is utility divided by market size--utility per supplier.
