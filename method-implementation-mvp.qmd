@@ -7,6 +7,13 @@ format:
 
 # Model of Market
 
+## Systematic Assumptions
+
+Unless otherwise stated:
+- All random variables are independent across time periods.
+- Within a time period, all random variables are independent of one another.
+- All variables are implicitly dependent on market size $n$.
+
 ## Demand
 
 Demand $D$ is drawn from $D \sim F_a$, where $a$ is a particular global state $A \in \mathbfcal{A}$. Demand scales proportionally with market size (number of potential suppliers?) $n$.
@@ -19,7 +26,11 @@ As $n$ increases, market behavior can be characterized by deterministic rules as
 
 (3.1):
 
+For all $a \in \mathbfcal{A}$ and $n \in \mathbb{N}$:
+
 $$
+\mathbb{E} \left[ \frac{D}{n} | A = a\right] = d_a
+\quad \text{and} \quad
 \mathop{\lim}_{n \rightarrow \infty} \mathbb{E} \left[ \left( \frac{D}{n} - d_a \right)^2 | A = a \right] = 0
 $$
 
@@ -106,7 +117,7 @@ The supplier only considers the average behavior of other marketplace participan
 
 Using the logit model fulfills the requirements for the choice function. Hence our choice function is:
 
-$\mathbb{P}[Z_i = 1 | P_i, \pi, A] = \frac{1}{1 + e^{-\alpha (P_i \mathbb{E}_{\pi} [\Omega (D, T) | A] - B_i)}}$
+$\mathbb{P}[Z_i = 1 | P_i, \pi, A] = \left( 1 + e^{-\alpha (P_i \mathbb{E}_{\pi} [\Omega (D, T) | A] - B_i)} \right)^{-1}$
 
 where:
 
@@ -153,4 +164,12 @@ $$
 u_{a}^{(n)}(\pi) = \frac{1}{n} \mathbb{E}_n \left[ U | A = a \right] \quad \text{and} \quad u^{(n)}(\pi) = \mathbb{E}_n \left[ u_{A}^{(n)} (\pi) \right]
 $$
 
-The normalized utility is utility divided by market size--utility per supplier.
+The normalized utility is utility divided by market size--utility per supplier. This form is comparable across different market sizes.
+
+# Mean-Field Analysis
+
+## $n$-sized Markets
+
+The important quantities in the model are 
+
+The mean-field analysis relies on $n \rightarrow \infty$ for the relevant quantities to converge to limiting functions. For example, 
