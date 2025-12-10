@@ -1,0 +1,12 @@
+---
+title: "Market Equilibrium as Interference"
+author: "Jackson M Luckey"
+bibliography: "Final Project - Market Equilibrium as Interference.bib"
+format:
+    html:
+        embed-resources: true
+    pdf:
+        documentclass: article
+---
+
+@wager_experimenting_2020
