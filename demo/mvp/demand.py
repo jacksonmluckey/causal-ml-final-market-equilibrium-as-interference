@@ -28,90 +28,87 @@ class GlobalState:
     probability: float = 1.0
 
 
+@dataclass
 class DemandModel:
     """
-    Generates demand D given global state A and market size n.
+    Configuration for demand generation.
+
+    Attributes:
+        states: Dictionary mapping state names to GlobalState objects
+        concentration_param: Controls how tightly D/n concentrates around d_a
+    """
+    states: Dict[str, GlobalState]
+    concentration_param: float = 50.0
+
+
+def normalize_probabilities(states: Dict[str, GlobalState]) -> Dict[str, float]:
+    """Calculate normalized probabilities for all states."""
+    state_names = list(states.keys())
+    probs = np.array([states[s].probability for s in state_names])
+    total = probs.sum()
+    return {name: prob / total for name, prob in zip(state_names, probs)}
+
+
+def sample_state(
+    model: DemandModel,
+    rng: np.random.Generator | None = None
+) -> GlobalState:
+    """Sample a global state A according to the state probabilities."""
+    if rng is None:
+        rng = np.random.default_rng()
+
+    normalized_probs = normalize_probabilities(model.states)
+    state_names = list(normalized_probs.keys())
+    probs = np.array([normalized_probs[s] for s in state_names])
+
+    chosen_name = rng.choice(state_names, p=probs)
+    return model.states[chosen_name]
+
+
+def calculate_beta_params(d_a: float, k: float) -> Tuple[float, float]:
+    """Calculate Beta distribution parameters for given mean and concentration."""
+    alpha = k * d_a
+    beta = k * (1 - d_a)
+    return alpha, beta
+
+
+def sample_demand(
+    model: DemandModel,
+    state: GlobalState,
+    n: int,
+    rng: np.random.Generator | None = None
+) -> int:
+    """
+    Sample demand D given global state and market size.
     
     The demand satisfies:
     - E[D/n | A=a] = d_a
     - D/n concentrates on d_a as n → ∞
-    
-    We use a scaled Beta distribution to ensure concentration while
-    allowing for realistic variance in finite markets.
+
+    Uses a Beta distribution scaled to have mean n * d_a and 
+    variance that decreases with n (satisfying concentration property 3.1).
+
+    This ennsures concentration while allowing for realistic variance in finite markets.
     """
-    
-    def __init__(self, states: Dict[str, GlobalState], concentration_param: float = 50.0):
-        """
-        Args:
-            states: Dictionary mapping state names to GlobalState objects
-            concentration_param: Controls how tightly D/n concentrates around d_a
-                               Higher values → tighter concentration
-        """
-        self.states = states
-        self.concentration_param = concentration_param
-        
-    def sample_state(self, rng: Optional[np.random.Generator] = None) -> GlobalState:
-        """Sample a global state A according to the state probabilities."""
-        if rng is None:
-            rng = np.random.default_rng()
-            
-        state_names = list(self.states.keys())
-        probs = np.array([self.states[s].probability for s in state_names])
-        probs = probs / probs.sum()  # Normalize
-        
-        chosen_name = rng.choice(state_names, p=probs)
-        return self.states[chosen_name]
-    
-    def sample_demand(self, state: GlobalState, n: int, 
-                      rng: Optional[np.random.Generator] = None) -> int:
-        """
-        Sample demand D given global state and market size.
-        
-        Uses a Beta distribution scaled to have mean n * d_a and 
-        variance that decreases with n (satisfying concentration property 3.1).
-        
-        Args:
-            state: The global state A
-            n: Market size (number of potential suppliers)
-            rng: Random number generator
-            
-        Returns:
-            D: Total demand (integer)
-        """
-        if rng is None:
-            rng = np.random.default_rng()
-            
-        d_a = state.d_a
-        
-        # Use Beta distribution with parameters chosen so:
-        # - Mean = d_a
-        # - Variance decreases with concentration_param
-        # Beta(α, β) has mean α/(α+β) and variance αβ/((α+β)²(α+β+1))
-        
-        # For mean = d_a, we need α/(α+β) = d_a
-        # Setting α = k*d_a and β = k*(1-d_a) for some k gives mean d_a
-        # and variance d_a(1-d_a)/(k+1) which → 0 as k → ∞
-        
-        k = self.concentration_param
-        
-        # Ensure d_a is in (0, 1) for Beta distribution
-        # If d_a > 1, we'll scale appropriately
-        if d_a <= 0:
-            return 0
-            
-        if d_a < 1:
-            alpha = k * d_a
-            beta = k * (1 - d_a)
-            scaled_demand = rng.beta(alpha, beta)
-        else:
-            # For d_a >= 1, use Gamma distribution instead
-            # Gamma(shape=k, scale=d_a/k) has mean d_a and variance d_a²/k
-            scaled_demand = rng.gamma(shape=k, scale=d_a/k)
-        
-        # Scale by market size
-        D = int(round(n * scaled_demand))
-        return max(0, D)
-    
-    def expected_demand(self, state: GlobalState, n: int) -> float:
-        """Return expected demand E[D | A=state] = n * d_a"""
-        return n * state.d_a
+    if rng is None:
+        rng = np.random.default_rng()
+
+    d_a = state.d_a
+    k = model.concentration_param
+
+    if d_a <= 0:
+        return 0
+
+    if d_a < 1:
+        alpha, beta = calculate_beta_params(d_a, k)
+        scaled_demand = rng.beta(alpha, beta)
+    else:
+        scaled_demand = rng.gamma(shape=k, scale=d_a/k)
+
+    D = int(round(n * scaled_demand))
+    return max(0, D)
+
+
+def expected_demand(state: GlobalState, n: int) -> float:
+    """Return expected demand E[D | A=state] = n * d_a"""
+    return n * state.d_a
