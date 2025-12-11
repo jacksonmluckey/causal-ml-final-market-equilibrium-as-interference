@@ -159,6 +159,7 @@ Example: Parallel M/M/1 Queues with capacity L
 """)
 
 # Create allocation functions
+queue_L15 = QueueAllocation(L=15)
 queue_L8 = QueueAllocation(L=8)
 queue_L4 = QueueAllocation(L=4)
 linear = LinearAllocation()
@@ -185,6 +186,7 @@ axes[0].legend()
 axes[0].grid(True, alpha=0.3)
 
 # Show derivative (important for equilibrium analysis)
+axes[1].plot(x_vals, [queue_L15.omega_derivative(x) for x in x_vals], label='L=15')
 axes[1].plot(x_vals, [queue_L8.omega_derivative(x) for x in x_vals], label='L=8')
 axes[1].plot(x_vals, [queue_L4.omega_derivative(x) for x in x_vals], label='L=4')
 axes[1].set_xlabel('x = D/T')
@@ -271,8 +273,8 @@ axes[0].grid(True, alpha=0.3)
 # Average activation probability E[f_B(x)]
 avg_probs = [population.activation_probability(x) for x in x_vals]
 axes[1].plot(x_vals, avg_probs, 'b-', linewidth=2)
-axes[1].set_xlabel('Expected Revenue x = p × E[Ω]')
-axes[1].set_ylabel('Average Activation μ = E[f_B(x)]')
+axes[1].set_xlabel('Expected Revenue x = p E[Ω]')
+axes[1].set_ylabel('Activation Probability μ = E[f_B(x)]')
 axes[1].set_title('Population Activation Probability')
 axes[1].grid(True, alpha=0.3)
 

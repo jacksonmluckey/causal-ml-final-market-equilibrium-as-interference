@@ -115,24 +115,3 @@ class DemandModel:
     def expected_demand(self, state: GlobalState, n: int) -> float:
         """Return expected demand E[D | A=state] = n * d_a"""
         return n * state.d_a
-    
-
-# Example usage and testing
-if __name__ == "__main__":
-    # Create states (like weather conditions affecting ride demand)
-    states = {
-        "sunny": GlobalState("sunny", d_a=0.3, probability=0.7),
-        "rainy": GlobalState("rainy", d_a=0.6, probability=0.3),
-    }
-    
-    model = DemandModel(states, concentration_param=50)
-    
-    # Test concentration property
-    n = 1000
-    state = states["sunny"]
-    
-    samples = [model.sample_demand(state, n) / n for _ in range(1000)]
-    
-    print(f"State: {state.name}, d_a = {state.d_a}")
-    print(f"Mean of D/n: {np.mean(samples):.4f} (should be ≈ {state.d_a})")
-    print(f"Std of D/n: {np.std(samples):.4f} (should be small)")
