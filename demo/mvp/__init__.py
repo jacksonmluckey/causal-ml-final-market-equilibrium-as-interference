@@ -17,21 +17,24 @@ Main components:
 - platform: Platform utility and market simulation
 """
 
+from .utils import numerical_derivative
+
 from .demand import DemandModel, GlobalState
+
 from .allocation import (
     AllocationFunction, 
     QueueAllocation, 
     LinearAllocation, 
     SmoothLinearAllocation
 )
-from .supplier import (
-    ChoiceFunction,
-    LogisticChoice,
-    CostDistribution,
-    LogNormalCosts,
-    UniformCosts,
-    SupplierPopulation
-)
+#from .supplier import (
+#    ChoiceFunction,
+#    LogisticChoice,
+#    CostDistribution,
+#    LogNormalCosts,
+#    UniformCosts,
+#    SupplierPopulation
+#)
 from .market_platform import (
     RevenueFunction,
     LinearRevenue,
@@ -41,9 +44,10 @@ from .market_platform import (
 )
 
 __all__ = [
+    #'numerical_derivative',
     'DemandModel', 'GlobalState',
     'AllocationFunction', 'QueueAllocation', 'LinearAllocation', 'SmoothLinearAllocation',
-    'ChoiceFunction', 'LogisticChoice',
-    'CostDistribution', 'LogNormalCosts', 'UniformCosts', 'SupplierPopulation',
+    #'ChoiceFunction', 'LogisticChoice',
+    #'CostDistribution', 'LogNormalCosts', 'UniformCosts', 'SupplierPopulation',
     'RevenueFunction', 'LinearRevenue', 'PlatformUtility', 'Market', 'MarketOutcome'
 ]

@@ -17,7 +17,8 @@ from dataclasses import dataclass
 
 # Import our other modules
 from .allocation import AllocationFunction, QueueAllocation
-from .supplier import SupplierPopulation, LogisticChoice, LogNormalCosts
+# TODO needs to be updated post-refactoring of supplier.py
+#from .supplier import SupplierPopulation, LogisticChoice, LogNormalCosts
 
 
 class RevenueFunction:

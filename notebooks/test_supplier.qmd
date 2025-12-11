@@ -1,0 +1,18 @@
+
+```{python}
+from demo.mvp import supplier
+```
+from demo.mvp..supplier import create_lognormal_costs
+
+
+```{python}
+supplier_parameters = supplier.SupplierParameters(
+    choice = supplier.create_logistic_choice(alpha = 1.0),
+    private_features = supplier.create_lognormal_costs(
+        log_mean=0.0,
+        log_std=1.0,
+        scale=20.0
+    ),
+    n_monte_carlo=1000
+)
+```

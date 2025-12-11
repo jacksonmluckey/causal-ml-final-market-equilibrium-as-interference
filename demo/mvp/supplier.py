@@ -17,21 +17,9 @@ The key insight is that suppliers use STATIONARY reasoning:
 """
 
 import numpy as np
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 from dataclasses import dataclass
-from scipy.optimize import brentq
-from scipy.stats import norm, expon
-from utils import numerical_derivative
-
-
-@dataclass
-class SupplierType:
-    """
-    Represents heterogeneity across suppliers.
-    
-    B_i is drawn from a distribution - this class represents one realization.
-    """
-    b: float  # The private feature value (e.g., cost threshold)
+from .utils import numerical_derivative
 
 
 @dataclass
@@ -296,6 +284,7 @@ class SupplierParameters:
     """
     choice: ChoiceFunction
     private_features: PrivateFeatureDistribution
+    # TODO consider setting the number of Monte Carlo samples elsewhere
     n_monte_carlo: int = 10000
 
 
