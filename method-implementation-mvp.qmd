@@ -449,13 +449,15 @@ plt.tight_layout()
 
 ## $n$-sized Markets
 
-The mean-field analysis relies on $n \rightarrow \infty$ for the relevant quantities to converge to limiting functions.
+As $n$ approaches the mean-field limit (i.e. $n \rightarrow \infty$), the individual/local randomness averages out (think law of large numbers), leaving only global randomness from the state $A$.
 
-For example:
+The mean-field analysis relies on $n \rightarrow \infty$ for the relevant quantities to converge to limiting functions. For example:
 
-- $\lim_{n \rightarrow \infty} \mu_{a}^{(n)} (p) = \mu_{a} (p)$
-- $\lim_{n \rightarrow \infty} q_{a}^{(n)} (\mu) = \omega \left( \frac{d_a}{\mu} \right)$
-- $\lim_{n \rightarrow \infty} u_{a}^{(n)} (p) = u_{a} (p) = \left( r \left( \frac{d_a}{\mu_a (p)} \right) - p \omega \left( \frac{d_a}{\mu_a (p)} \right) \right) \mu_{a} (p)$
-- $\lim_{n \rightarrow \infty} (q_{a}^{(n)})' (\mu) = -\omega' \left( \frac{d_a}{\mu} \right) \frac{d_a}{\mu^2}$
+- $\lim_{n \rightarrow \infty} \mu_{a}^{(n)} (p) = \mu_{a} (p)$: In a sufficiently large market, the proportion of suppliers that are active becomes $\mu$ (conditional on global state $A$ and payment $p$)
+- $\lim_{n \rightarrow \infty} q_{a}^{(n)} (\mu) = \omega \left( \frac{d_a}{\mu} \right)$: In a sufficiently large market, the demand allocated per active supplier is the demand per supplier divided by the proportion of suppliers that are active
+- $\lim_{n \rightarrow \infty} u_{a}^{(n)} (p) = u_{a} (p) = \left( r \left( \frac{d_a}{\mu_a (p)} \right) - p \omega \left( \frac{d_a}{\mu_a (p)} \right) \right) \mu_{a} (p)$: In a sufficiently large market, the platform utility per supplier is the revenue per active supplier minus the payments per active supplier times the proportion of suppliers that are active
+- $\lim_{n \rightarrow \infty} (q_{a}^{(n)})' (\mu) = -\omega' \left( \frac{d_a}{\mu} \right) \frac{d_a}{\mu^2}$: allocation derivative?
+
+This makes the important quantities deterministic functions!
 
 ## Number of Suppliers in Equilibrium
