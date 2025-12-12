@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Polygon
 import numpy as np
+from matplotlib.lines import Line2D
+from utils import get_figures_path
 
 # Create figure with two subplots side by side
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
 # Define positions for nodes
 w_positions = [(0, 2), (0, 1), (0, 0)]  # Left column (W nodes)
@@ -133,13 +135,12 @@ for i in range(3):
     draw_arrow(ax2, p_position, y_positions[i], '#FF8C00')
 
 # Add an overall title
-fig.suptitle('General vs Market Interference', fontsize=24, fontweight='bold', y=1.02)
+fig.suptitle('General vs Market Interference', fontsize=24, fontweight='bold', y=0.95)
 
 # Adjust subplot spacing
 plt.subplots_adjust(top=0.92)
 
 # Create legend handles
-from matplotlib.lines import Line2D
 legend_elements = [
     Line2D([0], [0], color='#4169E1', linewidth=2.5, label='Direct connection'),
     Line2D([0], [0], color='#FF8C00', linewidth=2.5, label='Interference')
@@ -148,3 +149,5 @@ legend_elements = [
 # Add legend to the figure
 fig.legend(handles=legend_elements, loc='lower center', ncol=2, 
            bbox_to_anchor=(0.5, -0.02), fontsize=14, frameon=True)
+
+fig.savefig(get_figures_path("general-vs-market-interference.png"))
