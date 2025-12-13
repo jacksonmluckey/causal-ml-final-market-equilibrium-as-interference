@@ -1,0 +1,25 @@
+---
+title: "Overview of Notation Used in Experimenting in Equilibrium (Wager and Xu)"
+---
+
+##
+
+- $A_t$: Global state that determines overall demand on day $t$
+- $\mathbfcal{A}$: Set of all possible global states
+- $D_t$: Demand on day $t$
+- $\pi_t$ Platform payment policy on day $t$ that individual supplier payments are sampled from 
+- $P_{it}$ Payment to supplier $i$ on day $t$ ($P_{it} \sim \pi_t$)
+- $Z_{it}$: 1 if supplier $i$ is active on day $t$, 0 otherwise
+- $n$: Number of potential suppliers ($i \in \{1 \dots n\}$)
+- $S_i$: Amount of demand that active supplier $i$ can serve
+- $T$: Total number of active suppliers
+- $d_a$: Demand per supplier ($\frac{D}{n}$)
+- $\Omega(d,t)$: Demand allocated per active supplier given total demand $d$ and total active suppliers $t$
+- $\omega(d / t)$: Demand allocation function
+- $B_i$: Heterogenity for supplier $i$ (eg supplier cost or noise in expected revenue estimate)
+
+## $n$-Sized Market
+
+- $\PropSupplierActive$: The proportion of suppliers that are active at the price level $p$
+- $\DemandAllocatedPerActiveSupplier$: The demand allocated per active supplier given $\mu$ proportion of suppliers are active
+- $\PlatformUtility$: The platform utility at the price level $p$

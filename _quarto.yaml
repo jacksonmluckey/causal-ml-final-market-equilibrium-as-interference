@@ -3,13 +3,13 @@ project:
 
 # Allows for using the same LaTeX macros in HTML and PDF output
 filters:
-  - _macros.lua
+  - notebooks/_macros.lua
 
 format:
   html:
     embed-resources: true
   pdf:
-    include-in-header: _macros.tex
+    include-in-header: notebooks/_macros.tex
 
 # necessary to import demo from Quarto
 jupyter: markets-as-interference
