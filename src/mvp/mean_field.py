@@ -23,6 +23,13 @@ from typing import Callable, Optional, Tuple, TYPE_CHECKING
 import numpy as np
 from scipy.optimize import brentq
 
+from .supplier import (
+    ChoiceFunction,
+    PrivateFeatureDistribution,
+    create_logistic_choice,
+    create_lognormal_costs,
+)
+
 if TYPE_CHECKING:
     from .find_equilibrium import MeanFieldEquilibrium
 
@@ -154,156 +161,6 @@ def create_simple_allocation() -> AllocationFunction:
         omega_prime=omega_prime,
         name="Simple Concave"
     )
-
-
-# =============================================================================
-# CHOICE FUNCTIONS (from Section 3, Assumption 2)
-# =============================================================================
-
-@dataclass
-class ChoiceFunction:
-    """
-    Supplier choice function f_b(x) as described in Assumption 2.
-    
-    The choice function maps expected revenue x to the probability of
-    becoming active, given private feature b (e.g., outside option).
-    
-    Properties (Assumption 2):
-        - Takes values in [0, 1]
-        - Monotonically non-decreasing
-        - Twice differentiable with bounded second derivative
-    
-    Parameters
-    ----------
-    f : Callable[[float, float], float]
-        f(x, b) returns P(Z=1 | expected_revenue=x, private_feature=b)
-    f_prime : Optional[Callable[[float, float], float]]
-        Derivative ∂f/∂x(x, b)
-    name : str
-        Descriptive name
-    """
-    f: Callable[[float, float], float]
-    f_prime: Optional[Callable[[float, float], float]] = None
-    name: str = "Generic"
-    
-    def __call__(self, x: float, b: float) -> float:
-        """Evaluate f_b(x) = P(active | expected_revenue=x, private_feature=b)."""
-        return self.f(x, b)
-    
-    def derivative(self, x: float, b: float) -> float:
-        """
-        Evaluate f'_b(x) = ∂f_b/∂x.
-        
-        This appears in the marginal response function (Definition 9):
-            Δ_a(p) = q_a(μ_a(p)) · E[f'_{B_1}(p · q_a(μ_a(p))) | A=a]
-        """
-        if self.f_prime is not None:
-            return self.f_prime(x, b)
-        else:
-            return numerical_derivative(lambda xx: self.f(xx, b), x)
-
-
-def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
-    """
-    Create logistic choice function from Example 7.
-    
-    From Equation 3.7:
-        P(Z_i = 1 | P_i, π, A) = 1 / (1 + exp(-α(P_i · E[Ω(D,T)|A] - B_i)))
-    
-    Here, x = expected_revenue and b = B_i (break-even cost threshold).
-    
-    Parameters
-    ----------
-    alpha : float
-        Sensitivity parameter. As α → ∞, decision becomes deterministic:
-        active iff expected_revenue > break_even_cost
-    
-    Returns
-    -------
-    ChoiceFunction
-        The logistic choice function
-    """
-    def f(x: float, b: float) -> float:
-        """Logistic choice probability."""
-        z = alpha * (x - b)
-        # Numerically stable sigmoid
-        if z >= 0:
-            return 1.0 / (1.0 + np.exp(-z))
-        else:
-            exp_z = np.exp(z)
-            return exp_z / (1.0 + exp_z)
-    
-    def f_prime(x: float, b: float) -> float:
-        """Derivative of logistic choice function."""
-        prob = f(x, b)
-        return alpha * prob * (1.0 - prob)
-    
-    return ChoiceFunction(
-        f=f,
-        f_prime=f_prime,
-        name=f"Logistic (α={alpha})"
-    )
-
-
-# =============================================================================
-# PRIVATE FEATURE DISTRIBUTION
-# =============================================================================
-
-@dataclass
-class PrivateFeatureDistribution:
-    """
-    Distribution of private features B_i.
-    
-    The private features capture heterogeneity across suppliers, such as
-    their outside options or break-even cost thresholds.
-    
-    Parameters
-    ----------
-    sample : Callable[[int], np.ndarray]
-        Function to sample n i.i.d. draws from the distribution
-    name : str
-        Descriptive name
-    """
-    sample: Callable[[int], np.ndarray]
-    name: str = "Generic"
-
-
-def create_lognormal_outside_option(
-    log_mean: float = 0.0,
-    log_std: float = 1.0,
-    scale: float = 20.0
-) -> PrivateFeatureDistribution:
-    """
-    Create lognormal distribution for outside options.
-    
-    From the paper's simulation (Figure 2 caption):
-        log(B_i / 20) ~ N(0, 1)
-    
-    So B_i = 20 * exp(N(0,1)), which is lognormal.
-    
-    Parameters
-    ----------
-    log_mean : float
-        Mean of log(B_i / scale)
-    log_std : float
-        Standard deviation of log(B_i / scale)
-    scale : float
-        Scale factor (20 in the paper)
-    """
-    def sample(n: int) -> np.ndarray:
-        return scale * np.exp(np.random.normal(log_mean, log_std, n))
-    
-    return PrivateFeatureDistribution(
-        sample=sample,
-        name=f"LogNormal(μ={log_mean}, σ={log_std}, scale={scale})"
-    )
-
-
-# =============================================================================
-# SECTION 3.1: MEAN-FIELD ASYMPTOTICS
-# =============================================================================
-# NOTE: Core equilibrium computation has been moved to find_equilibrium.py
-# This section now only contains MarketParameters and helper functions.
 
 
 @dataclass
@@ -738,46 +595,3 @@ def analyze_payment_range(
         results['interference_factor'][i] = analysis.interference_factor
     
     return results
-
-
-if __name__ == "__main__":
-    from .find_equilibrium import compute_mean_field_equilibrium
-
-    # Quick demonstration
-    print("=" * 60)
-    print("Mean-Field Equilibrium Analysis")
-    print("Sections 3.1 and 3.2 of Wager & Xu (2021)")
-    print("=" * 60)
-
-    # Create default parameters
-    params = create_default_market_params()
-    print(f"\nModel Parameters:")
-    print(f"  Allocation: {params.allocation.name}")
-    print(f"  Choice: {params.choice.name}")
-    print(f"  Demand (d_a): {params.d_a}")
-    print(f"  Revenue (γ): {params.gamma}")
-
-    # Analyze a specific payment
-    p = 30.0
-    print(f"\n--- Analysis for p = {p} ---")
-
-    eq = compute_mean_field_equilibrium(p, params)
-    print(f"\nMean-Field Equilibrium (Lemma 2):")
-    print(f"  μ_a(p) = {eq.mu:.4f}  (supply fraction)")
-    print(f"  q_a(μ) = {eq.q:.4f}  (allocation rate)")
-    print(f"  u_a(p) = {eq.u:.4f}  (utility)")
-    print(f"  d_a/μ  = {eq.demand_supply_ratio:.4f}  (demand/supply ratio)")
-    
-    analysis = analyze_marginal_response(p, params, eq)
-    print(f"\nMarginal Response Analysis (Section 3.2):")
-    print(f"  Δ_a(p)   = {analysis.delta:.6f}  (marginal response)")
-    print(f"  μ'_a(p)  = {analysis.mu_prime:.6f}  (actual gradient)")
-    print(f"  1+R_a(p) = {analysis.interference_factor:.4f}  (interference factor)")
-    print(f"  Σ^Δ_a(p) = {analysis.sigma_delta:.4f}  (scaled marginal sensitivity)")
-    print(f"  Σ^Ω_a(p) = {analysis.sigma_omega:.4f}  (scaled matching elasticity)")
-    
-    u_prime = compute_utility_gradient(p, params, eq, analysis)
-    print(f"\nUtility Gradient:")
-    print(f"  u'_a(p) = {u_prime:.6f}")
-    
-    print("\n" + "=" * 60)

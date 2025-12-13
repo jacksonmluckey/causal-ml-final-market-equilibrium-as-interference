@@ -16,7 +16,8 @@ from typing import Tuple
 import numpy as np
 from scipy.optimize import brentq
 
-from .mean_field import MarketParameters, ChoiceFunction, PrivateFeatureDistribution
+from .mean_field import MarketParameters
+from .supplier import ChoiceFunction, PrivateFeatureDistribution
 
 
 @dataclass
