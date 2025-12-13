@@ -7,7 +7,7 @@ the same behavior as the original class-based implementation.
 
 import pytest
 import numpy as np
-from demo.mvp import (
+from mvp import (
     # Allocation
     AllocationFunction,
     create_queue_allocation,
