@@ -11,12 +11,31 @@ NODE_EDGE_COLOR = 'blue'
 NODE_FILL_COLOR = 'white'
 
 # Create figure with two subplots side by side
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 10))
 
-# Define positions for nodes
-w_positions = [(0, 2), (0, 1), (0, 0)]  # Left column (W nodes)
-y_positions = [(3, 2), (3, 1), (3, 0)]  # Right column (Y nodes)
-p_position = (1.5, -0.8)  # P node position for marketplace
+# Define positions for 6 nodes per column
+# Group 1: nodes 1, 2, 3 (top)
+# Gap
+# Group 2: nodes n-2, n-1, n (bottom)
+w_positions = [
+    (0, 4.0),   # W₁
+    (0, 3.2),   # W₂
+    (0, 2.4),   # W₃
+    (0, 1.0),   # Wₙ₋₂
+    (0, 0.2),   # Wₙ₋₁
+    (0, -0.6),  # Wₙ
+]
+
+y_positions = [
+    (3, 4.0),   # Y₁
+    (3, 3.2),   # Y₂
+    (3, 2.4),   # Y₃
+    (3, 1.0),   # Yₙ₋₂
+    (3, 0.2),   # Yₙ₋₁
+    (3, -0.6),  # Yₙ
+]
+
+p_position = (1.5, 1.7)  # P node position for marketplace (centered)
 
 def draw_node(ax, pos, label, color=NODE_FILL_COLOR):
     """Draw a circular node"""
@@ -67,18 +86,36 @@ def draw_dotted_line(ax, start, end):
     ax.plot([start[0], end[0]], [start[1], end[1]], 
             'k:', linewidth=1.5, zorder=2)
 
+def draw_bracket(ax, x, y_top, y_bottom, label=''):
+    """Draw a bracket to show grouping, facing the nodes"""
+    bracket_width = 0.15
+    bracket_offset = 0.4
+    
+    x_bracket = x - bracket_offset
+    
+    # Draw the bracket lines (like [ facing right toward the nodes)
+    ax.plot([x_bracket, x_bracket + bracket_width], [y_top, y_top], 'k-', linewidth=2)
+    ax.plot([x_bracket, x_bracket], [y_top, y_bottom], 'k-', linewidth=2)
+    ax.plot([x_bracket, x_bracket + bracket_width], [y_bottom, y_bottom], 'k-', linewidth=2)
+    
+    # Add label if provided
+    if label:
+        y_mid = (y_top + y_bottom) / 2
+        ax.text(x_bracket - 0.2, y_mid, label, ha='right', va='center', 
+                fontsize=14, fontweight='normal')
+
 # ===== LEFT PLOT: GENERAL INTERFERENCE =====
-ax1.set_xlim(-0.5, 3.5)
-ax1.set_ylim(-1.2, 2.8)
+ax1.set_xlim(-1.0, 3.5)
+ax1.set_ylim(-1.2, 4.8)
 ax1.axis('off')
 ax1.set_aspect('equal')
 
 # Title
-ax1.text(1.5, 2.3, 'General', fontsize=20, color='black', ha='center', fontweight='normal')
+ax1.text(1.5, 4.5, 'General', fontsize=20, color='black', ha='center', fontweight='normal')
 
 # Draw nodes
-w_labels = ['W₁', 'W₂', 'Wₙ']
-y_labels = ['Y₁', 'Y₂', 'Yₙ']
+w_labels = [r'$W_1$', r'$W_2$', r'$W_3$', r'$W_{n-2}$', r'$W_{n-1}$', r'$W_n$']
+y_labels = [r'$Y_1$', r'$Y_2$', r'$Y_3$', r'$Y_{n-2}$', r'$Y_{n-1}$', r'$Y_n$']
 
 for i, (pos, label) in enumerate(zip(w_positions, w_labels)):
     draw_node(ax1, pos, label)
@@ -86,30 +123,49 @@ for i, (pos, label) in enumerate(zip(w_positions, w_labels)):
 for i, (pos, label) in enumerate(zip(y_positions, y_labels)):
     draw_node(ax1, pos, label)
 
-# Draw blue direct arrows
-for i in range(3):
+# Draw blue direct arrows (all 6 connections)
+for i in range(6):
     draw_arrow(ax1, w_positions[i], y_positions[i], DIRECT_COLOR)
 
-# Draw dotted lines between nodes
-draw_dotted_line(ax1, (w_positions[1][0], w_positions[1][1] - 0.25), 
-                 (w_positions[2][0], w_positions[2][1] + 0.25))
-draw_dotted_line(ax1, (y_positions[1][0], y_positions[1][1] - 0.25), 
-                 (y_positions[2][0], y_positions[2][1] + 0.25))
+# Draw dotted lines to indicate continuation
+# (Removed lines between W₂-W₃ and Y₂-Y₃ as requested)
 
-# Draw orange interference arrows (crossing connections) - STRAIGHT
+# Draw dotted lines in the gap between groups
+draw_dotted_line(ax1, (w_positions[2][0], w_positions[2][1] - 0.35), 
+                 (w_positions[3][0], w_positions[3][1] + 0.35))
+draw_dotted_line(ax1, (y_positions[2][0], y_positions[2][1] - 0.35), 
+                 (y_positions[3][0], y_positions[3][1] + 0.35))
+
+# (Removed lines between Wₙ₋₂-Wₙ₋₁ and Yₙ₋₂-Yₙ₋₁ as requested)
+
+# Draw orange interference arrows ONLY WITHIN GROUPS
+# Group 1: indices 0, 1, 2 (W₁, W₂, W₃ to Y₁, Y₂, Y₃)
 for i in range(3):
     for j in range(3):
         if i != j:  # Skip direct connections
             draw_arrow(ax1, w_positions[i], y_positions[j], INTERFERENCE_COLOR)
 
+# Group 2: indices 3, 4, 5 (Wₙ₋₂, Wₙ₋₁, Wₙ to Yₙ₋₂, Yₙ₋₁, Yₙ)
+for i in range(3, 6):
+    for j in range(3, 6):
+        if i != j:  # Skip direct connections
+            draw_arrow(ax1, w_positions[i], y_positions[j], INTERFERENCE_COLOR)
+
+# Draw brackets to show groupings
+# Top bracket for group 1 (W₁, W₂, W₃)
+draw_bracket(ax1, w_positions[0][0], w_positions[0][1] + 0.3, w_positions[2][1] - 0.3, 'Group 1')
+
+# Bottom bracket for group 2 (Wₙ₋₂, Wₙ₋₁, Wₙ)
+draw_bracket(ax1, w_positions[3][0], w_positions[3][1] + 0.3, w_positions[5][1] - 0.3, r'Group $\frac{n}{3}$')
+
 # ===== RIGHT PLOT: MARKETPLACE INTERFERENCE =====
-ax2.set_xlim(-0.5, 3.5)
-ax2.set_ylim(-1.2, 2.8)
+ax2.set_xlim(-1.0, 3.5)
+ax2.set_ylim(-1.2, 4.8)
 ax2.axis('off')
 ax2.set_aspect('equal')
 
 # Title
-ax2.text(1.5, 2.3, 'Market Equilibrium', fontsize=20, color='black', ha='center', fontweight='normal',)
+ax2.text(1.5, 4.5, 'Market Equilibrium', fontsize=20, color='black', ha='center', fontweight='normal')
 
 # Draw W and Y nodes
 for i, (pos, label) in enumerate(zip(w_positions, w_labels)):
@@ -122,20 +178,25 @@ for i, (pos, label) in enumerate(zip(y_positions, y_labels)):
 draw_node(ax2, p_position, 'P')
 
 # Draw blue direct arrows
-for i in range(3):
+for i in range(6):
     draw_arrow(ax2, w_positions[i], y_positions[i], DIRECT_COLOR)
 
-# Draw dotted lines between nodes
-draw_dotted_line(ax2, (w_positions[1][0], w_positions[1][1] - 0.25), 
-                 (w_positions[2][0], w_positions[2][1] + 0.25))
-draw_dotted_line(ax2, (y_positions[1][0], y_positions[1][1] - 0.25), 
-                 (y_positions[2][0], y_positions[2][1] + 0.25))
+# Draw dotted lines to indicate continuation
+# (Removed lines between W₂-W₃ and Y₂-Y₃ as requested)
 
-# Draw orange arrows through P - straight lines
-for i in range(3):
+# Draw dotted lines in the gap
+draw_dotted_line(ax2, (w_positions[2][0], w_positions[2][1] - 0.35), 
+                 (w_positions[3][0], w_positions[3][1] + 0.35))
+draw_dotted_line(ax2, (y_positions[2][0], y_positions[2][1] - 0.35), 
+                 (y_positions[3][0], y_positions[3][1] + 0.35))
+
+# (Removed lines between Wₙ₋₂-Wₙ₋₁ and Yₙ₋₂-Yₙ₋₁ as requested)
+
+# Draw orange arrows through P - all 6 W nodes to P, and P to all 6 Y nodes
+for i in range(6):
     draw_arrow(ax2, w_positions[i], p_position, INTERFERENCE_COLOR)
 
-for i in range(3):
+for i in range(6):
     draw_arrow(ax2, p_position, y_positions[i], INTERFERENCE_COLOR)
 
 # Add an overall title
@@ -154,4 +215,6 @@ fig.legend(handles=legend_elements, loc='lower center', ncol=2,
 # Adjust subplot spacing to minimize whitespace
 plt.subplots_adjust(left=0.05, right=0.95, top=0.90, bottom=0.08)
 
+# Save the figure
 fig.savefig(get_figures_path("general-vs-market-interference.png"), bbox_inches='tight', pad_inches=0.1)
+plt.close()

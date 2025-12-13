@@ -449,8 +449,6 @@ plt.tight_layout()
 
 # Mean-Field Analysis
 
-## $n$-sized Markets
-
 As $n$ approaches the mean-field limit (i.e. $n \rightarrow \infty$), the individual/local randomness averages out (think law of large numbers), leaving only global randomness from the state $A$.
 
 The mean-field analysis relies on $n \rightarrow \infty$ for the relevant quantities to converge to limiting functions. For example:
@@ -462,4 +460,14 @@ The mean-field analysis relies on $n \rightarrow \infty$ for the relevant quanti
 
 This makes the important quantities deterministic functions!
 
-## Number of Suppliers in Equilibrium
+Note: $q()$ is the expected demand per supplier if the total number of suppliers was exogeneously drawn as shown: $q_{a}^{(n)}(\mu) = \mathbb{E}[\Omega(D, X)|A = a], \quad X \sim \text{Binomial}(n, \mu)$
+
+# Marginal Response Function
+
+The marginal response function $\triangle (p)$ is the average payment sensitivity of a supplier holding the rest of the market constant.
+
+(3.17): $\triangle_{a}^{(n)}(p) = q_{a}^{(n)} \left( u_{a}^{(n)}(p) \right) \mathbb{E} \left[ f_{B_1}' \left( p q_{a}^{(n)} \left( u_{a}^{(n)}(p) \right) \right) | A = a \right]$
+
+The "true" payment sensitivity, $\frac{d \mu(p)}{d p}$, includes the feedback effects from the market.
+
+(3.18): $\frac{d}{dp}\mu_{a}^{(n)}(p) = \frac{\triangle_{a}^{(n)}(p)}{1 - p \triangle_{a}^{(n)}(p) q_{a}^{(n)'} \left( u_{a}^{(n)}(p) \right) / q_{a}^{(n)} \left( u_{a}^{(n)}(p) \right)} \text{for any } n \geqslant 1$
