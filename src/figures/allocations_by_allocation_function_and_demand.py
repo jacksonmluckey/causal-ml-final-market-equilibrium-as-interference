@@ -1,4 +1,4 @@
-from demo.mvp import (
+from mvp import (
     create_queue_allocation,
     create_linear_allocation,
     compute_omega,
@@ -61,13 +61,13 @@ allocation_df = pl.DataFrame(
         pl.lit(")")
     ]))
     .when(pl.col.allocation_function == "linear")
-    .then(pl.lit(r"Linear (L = $\infty$)"))
+    .then(pl.lit(r"Linear ($\lim_{L \rightarrow \infty}$)"))
     .alias("allocation_mechanism")
 )
 
 # Want to be able to use LaTeX expressions in plot
-plt.rcParams['backend'] = 'pgf'
-#plt.rcParams['text.usetex'] = True
+#plt.rcParams['backend'] = 'pgf'
+plt.rcParams['text.usetex'] = True
 
 (
     ggplot(allocation_df, aes(
@@ -78,7 +78,7 @@ plt.rcParams['backend'] = 'pgf'
     geom_line() +
     theme_minimal() +
     labs(
-        x = 'Demand Per Active Supplier',
+        x = r'$x$ (Demand Per Active Supplier)',
         y = r'$\omega(x)$ (Allocation Per Active Supplier)'
     )
 ).save(get_figures_path("allocations_by_allocation_function.png"))

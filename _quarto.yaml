@@ -12,6 +12,6 @@ format:
     include-in-header: notebooks/_macros.tex
 
 # necessary to import demo from Quarto
-jupyter: markets-as-interference
-execute:
-  daemon: false
+#jupyter: markets-as-interference
+#execute:
+#  daemon: false
