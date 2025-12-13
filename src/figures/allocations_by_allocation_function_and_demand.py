@@ -45,7 +45,7 @@ for demand_per_active_supplier in demand_per_active_supplier_values:
         "demand_per_active_supplier": demand_per_active_supplier,
         "allocation_per_supplier": allocation_per_supplier,
         "omega_derivative": omega_derivative,
-        "queue_capacity": None
+        "queue_capacity": 999999999 # L -> \infty for the Linear Allocation function
     }
     allocations.append(allocation)
 
@@ -56,12 +56,12 @@ allocation_df = pl.DataFrame(
     # Add nice labels for plotting
     pl.when(pl.col.allocation_function == "queue")
     .then(pl.concat_str([
-        pl.lit("Queue (L="),
+        pl.lit(r"$L=$"),
         pl.col.queue_capacity,
-        pl.lit(")")
+        pl.lit("")
     ]))
     .when(pl.col.allocation_function == "linear")
-    .then(pl.lit(r"Linear ($\lim_{L \rightarrow \infty}$)"))
+    .then(pl.lit(r"$\lim_{L \rightarrow \infty}$"))
     .alias("allocation_mechanism")
 )
 
@@ -73,12 +73,21 @@ plt.rcParams['text.usetex'] = True
     ggplot(allocation_df, aes(
         x = "demand_per_active_supplier",
         y = "allocation_per_supplier",
-        color = "allocation_mechanism")
+        color = "reorder(allocation_mechanism, queue_capacity)")
     ) +
     geom_line() +
     theme_minimal() +
     labs(
-        x = r'$x$ (Demand Per Active Supplier)',
-        y = r'$\omega(x)$ (Allocation Per Active Supplier)'
+        title = (
+            r'Relationship Between Demand Per Active Supplier $x$' +
+            '\n' +
+            r'and Allocation Per Active Supplier $\omega(x)$'
+            + '\n'
+            + r'by Queue Length $L$ of Allocation Function $\omega$'
+        ),
+        subtitle = r'As $L$ increases, allocation per active supplier $\omega(x)$ becomes more linear',
+        x = r'{\huge $x$}' + '\n\n' + r'{\small (Demand Per Active Supplier)}',
+        y = r'{\huge $\omega(x)$}' + '\n\n' + r'{\small (Allocation Per Active Supplier)}',
+        color = 'Allocation' + '\n' + 'Function' + '\n' + '(Queue)'
     )
 ).save(get_figures_path("allocations_by_allocation_function.png"))
