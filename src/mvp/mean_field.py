@@ -19,9 +19,12 @@ References:
 """
 
 from dataclasses import dataclass, field
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, TYPE_CHECKING
 import numpy as np
 from scipy.optimize import brentq
+
+if TYPE_CHECKING:
+    from .find_equilibrium import MeanFieldEquilibrium
 
 
 def numerical_derivative(f: Callable[[float], float], x: float, dx: float = 1e-6) -> float:
@@ -299,32 +302,8 @@ def create_lognormal_outside_option(
 # =============================================================================
 # SECTION 3.1: MEAN-FIELD ASYMPTOTICS
 # =============================================================================
-
-@dataclass
-class MeanFieldEquilibrium:
-    """
-    Mean-field equilibrium of the marketplace.
-    
-    This implements the limiting equilibrium from Lemma 2, where
-    the number of suppliers n → ∞.
-    
-    Attributes
-    ----------
-    mu : float
-        Equilibrium fraction of active suppliers μ_a(p)
-        Solves: μ = E[f_{B_1}(p · ω(d_a/μ)) | A=a]  (Equation 3.13)
-    q : float
-        Expected allocation per active supplier q_a(μ_a(p)) = ω(d_a/μ)
-    u : float
-        Platform's expected utility per supplier u_a(p)
-        From Equation 3.15: u_a(p) = (r(d_a/μ) - p·ω(d_a/μ)) · μ
-    demand_supply_ratio : float
-        The ratio x = d_a / μ used in the allocation function
-    """
-    mu: float                   # Equilibrium supply fraction
-    q: float                    # Allocation per active supplier
-    u: float                    # Platform utility
-    demand_supply_ratio: float  # x = d_a / μ
+# NOTE: Core equilibrium computation has been moved to find_equilibrium.py
+# This section now only contains MarketParameters and helper functions.
 
 
 @dataclass
@@ -353,39 +332,6 @@ class MarketParameters:
     d_a: float = 0.4
     gamma: float = 100.0
     n_monte_carlo: int = 10000
-
-
-def compute_expected_choice(
-    revenue: float,
-    choice: ChoiceFunction,
-    private_features: PrivateFeatureDistribution,
-    n_samples: int = 10000
-) -> float:
-    """
-    Compute E[f_{B_1}(revenue) | A=a] via Monte Carlo.
-    
-    This is the expected probability of becoming active given
-    expected revenue, averaging over the private feature distribution.
-    
-    Parameters
-    ----------
-    revenue : float
-        Expected revenue (= p · q)
-    choice : ChoiceFunction
-        The choice function f_b(·)
-    private_features : PrivateFeatureDistribution
-        Distribution of B_i
-    n_samples : int
-        Number of Monte Carlo samples
-    
-    Returns
-    -------
-    float
-        E[f_{B_1}(revenue)]
-    """
-    b_samples = private_features.sample(n_samples)
-    probs = np.array([choice(revenue, b) for b in b_samples])
-    return np.mean(probs)
 
 
 def compute_expected_choice_derivative(
@@ -418,57 +364,6 @@ def compute_expected_choice_derivative(
     b_samples = private_features.sample(n_samples)
     derivs = np.array([choice.derivative(revenue, b) for b in b_samples])
     return np.mean(derivs)
-
-
-def compute_mean_field_equilibrium(
-    p: float,
-    params: MarketParameters
-) -> MeanFieldEquilibrium:
-    """
-    Compute the mean-field equilibrium for payment p.
-    
-    This implements Lemma 2, computing all key equilibrium quantities:
-    
-    1. μ_a(p): Equilibrium supply fraction (Equation 3.13)
-    2. q_a(μ_a(p)) = ω(d_a/μ): Allocation per supplier (Equation 3.14)
-    3. u_a(p): Platform utility (Equation 3.15)
-    
-    For the linear revenue function r(x) = γ·ω(x) from Lemma 3,
-    the utility simplifies to:
-        u_a(p) = (γ - p) · ω(d_a/μ) · μ
-    
-    Parameters
-    ----------
-    p : float
-        Payment per unit of demand served
-    params : MarketParameters
-        Model parameters
-    
-    Returns
-    -------
-    MeanFieldEquilibrium
-        The equilibrium quantities
-    """
-    from .find_equilibrium import solve_equilibrium_supply
-
-    # Step 1: Solve for equilibrium supply (Equation 3.13)
-    mu = solve_equilibrium_supply(p, params)
-    
-    # Step 2: Compute allocation (Equation 3.14)
-    x = params.d_a / mu  # demand-to-supply ratio
-    q = params.allocation(x)
-    
-    # Step 3: Compute utility (Equation 3.15)
-    # Using linear revenue: r(x) = γ · ω(x)
-    # u_a(p) = (r(d_a/μ) - p·ω(d_a/μ)) · μ = (γ - p) · q · μ
-    u = (params.gamma - p) * q * mu
-    
-    return MeanFieldEquilibrium(
-        mu=mu,
-        q=q,
-        u=u,
-        demand_supply_ratio=x
-    )
 
 
 # =============================================================================
@@ -655,6 +550,8 @@ def analyze_marginal_response(
     MarginalResponseAnalysis
         Complete analysis of marginal response and interference
     """
+    from .find_equilibrium import compute_mean_field_equilibrium
+
     # Compute equilibrium if not provided
     if equilibrium is None:
         equilibrium = compute_mean_field_equilibrium(p, params)
@@ -724,6 +621,8 @@ def compute_utility_gradient(
     float
         Utility gradient du_a(p)/dp
     """
+    from .find_equilibrium import compute_mean_field_equilibrium
+
     if equilibrium is None:
         equilibrium = compute_mean_field_equilibrium(p, params)
     
@@ -810,8 +709,10 @@ def analyze_payment_range(
         - utility gradients (u_prime)
         - interference factors
     """
+    from .find_equilibrium import compute_mean_field_equilibrium
+
     payments = np.linspace(p_min, p_max, n_points)
-    
+
     results = {
         'payments': payments,
         'mu': np.zeros(n_points),
@@ -822,7 +723,7 @@ def analyze_payment_range(
         'u_prime': np.zeros(n_points),
         'interference_factor': np.zeros(n_points)
     }
-    
+
     for i, p in enumerate(payments):
         eq = compute_mean_field_equilibrium(p, params)
         analysis = analyze_marginal_response(p, params, eq)
@@ -840,12 +741,14 @@ def analyze_payment_range(
 
 
 if __name__ == "__main__":
+    from .find_equilibrium import compute_mean_field_equilibrium
+
     # Quick demonstration
     print("=" * 60)
     print("Mean-Field Equilibrium Analysis")
     print("Sections 3.1 and 3.2 of Wager & Xu (2021)")
     print("=" * 60)
-    
+
     # Create default parameters
     params = create_default_market_params()
     print(f"\nModel Parameters:")
@@ -853,11 +756,11 @@ if __name__ == "__main__":
     print(f"  Choice: {params.choice.name}")
     print(f"  Demand (d_a): {params.d_a}")
     print(f"  Revenue (γ): {params.gamma}")
-    
+
     # Analyze a specific payment
     p = 30.0
     print(f"\n--- Analysis for p = {p} ---")
-    
+
     eq = compute_mean_field_equilibrium(p, params)
     print(f"\nMean-Field Equilibrium (Lemma 2):")
     print(f"  μ_a(p) = {eq.mu:.4f}  (supply fraction)")
