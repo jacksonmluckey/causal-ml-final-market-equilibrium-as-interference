@@ -10,3 +10,8 @@ format:
     embed-resources: true
   pdf:
     include-in-header: _macros.tex
+
+# necessary to import demo from Quarto
+jupyter: markets-as-interference
+execute:
+  daemon: false
