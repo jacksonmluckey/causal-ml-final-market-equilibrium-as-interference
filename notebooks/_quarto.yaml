@@ -1,6 +1,7 @@
 project:
   type: default
 
+# Allows for using the same LaTeX macros in HTML and PDF output
 filters:
   - _macros.lua
 

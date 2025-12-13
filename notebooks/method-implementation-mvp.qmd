@@ -10,17 +10,25 @@ from demo.mvp import (
     # Demand
     GlobalState,
     DemandModel,
+    sample_demand,
     # Allocation
-    QueueAllocation,
-    LinearAllocation,
-    SmoothLinearAllocation,
+    AllocationFunction,
+    create_queue_allocation,
+    create_linear_allocation,
+    create_smooth_linear_allocation,
+    compute_omega,
+    compute_omega_derivative,
     # Supplier
-    LogisticChoice,
-    LogNormalCosts,
-    SupplierPopulation,
+    SupplierParameters,
+    create_logistic_choice,
+    create_lognormal_costs,
+    compute_activation_probability,
     # Platform
-    LinearRevenue,
-    Market
+    MarketParameters,
+    create_linear_revenue,
+    find_equilibrium_mu,
+    compute_mean_field_utility,
+    compute_platform_utility,
 )
 import numpy as np
 import matplotlib.pyplot as plt
@@ -94,7 +102,7 @@ print("Testing Concentration Property (Eq. 3.1):")
 for n in [1, 10, 100, 1000, 10000, 100000]:
     for state_name, state in states.items():
         print(f'n={n}')
-        samples = [demand_model.sample_demand(state, n) / n for _ in range(1000)]
+        samples = [sample_demand(demand_model, state, n) / n for _ in range(1000)]
         print(f"  State '{state_name}': d_a = {state.d_a}")
         print(f"    Mean(D/n) = {np.mean(samples):.4f} (should be ≈ {state.d_a})")
         print(f"    Std(D/n) = {np.std(samples):.4f} (should be small)")
@@ -159,26 +167,26 @@ Example: Parallel M/M/1 Queues with capacity L
 """)
 
 # Create allocation functions
-queue_L15 = QueueAllocation(L=15)
-queue_L8 = QueueAllocation(L=8)
-queue_L4 = QueueAllocation(L=4)
-linear = LinearAllocation()
+queue_L15 = create_queue_allocation(L=15)
+queue_L8 = create_queue_allocation(L=8)
+queue_L4 = create_queue_allocation(L=4)
+linear = create_linear_allocation()
 
 x_vals = np.linspace(0.01, 2.5, 100)
 
 print("Sample values:")
 for x in [0.3, 0.5, 1.0, 1.5, 2.0]:
-    print(f"  x = {x:.1f}: ω_L8(x) = {queue_L8.omega(x):.4f}, "
-          f"ω_L4(x) = {queue_L4.omega(x):.4f}")
+    print(f"  x = {x:.1f}: ω_L8(x) = {compute_omega(queue_L8, x):.4f}, "
+          f"ω_L4(x) = {compute_omega(queue_L4, x):.4f}")
 
 # Plot allocation functions
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
 # Allocation function comparison
 for L in [4, 8, 15]:
-    alloc = QueueAllocation(L=L)
-    axes[0].plot(x_vals, [alloc.omega(x) for x in x_vals], label=f'L={L}')
-axes[0].plot(x_vals, [linear.omega(x) for x in x_vals], '--', label='Linear')
+    alloc = create_queue_allocation(L=L)
+    axes[0].plot(x_vals, [compute_omega(alloc, x) for x in x_vals], label=f'L={L}')
+axes[0].plot(x_vals, [compute_omega(linear, x) for x in x_vals], '--', label='Linear')
 axes[0].set_xlabel('x = D/T (demand per active supplier)')
 axes[0].set_ylabel('ω(x) (allocation per supplier)')
 axes[0].set_title('Regular Allocation Functions')
@@ -186,9 +194,9 @@ axes[0].legend()
 axes[0].grid(True, alpha=0.3)
 
 # Show derivative (important for equilibrium analysis)
-axes[1].plot(x_vals, [queue_L15.omega_derivative(x) for x in x_vals], label='L=15')
-axes[1].plot(x_vals, [queue_L8.omega_derivative(x) for x in x_vals], label='L=8')
-axes[1].plot(x_vals, [queue_L4.omega_derivative(x) for x in x_vals], label='L=4')
+axes[1].plot(x_vals, [compute_omega_derivative(queue_L15, x) for x in x_vals], label='L=15')
+axes[1].plot(x_vals, [compute_omega_derivative(queue_L8, x) for x in x_vals], label='L=8')
+axes[1].plot(x_vals, [compute_omega_derivative(queue_L4, x) for x in x_vals], label='L=4')
 axes[1].set_xlabel('x = D/T')
 axes[1].set_ylabel("ω'(x)")
 axes[1].set_title('Allocation Function Derivatives')
@@ -252,9 +260,9 @@ Where:
 """)
 
 # Create supplier model
-choice_fn = LogisticChoice(alpha=1.0)
-cost_dist = LogNormalCosts(log_mean=0.0, log_std=1.0, scale=20.0)
-population = SupplierPopulation(choice_fn, cost_dist)
+choice_fn = create_logistic_choice(alpha=1.0)
+cost_dist = create_lognormal_costs(log_mean=0.0, log_std=1.0, scale=20.0)
+supplier_params = SupplierParameters(choice=choice_fn, private_features=cost_dist)
 
 # Show choice function for different cost levels
 x_vals = np.linspace(0, 80, 100)
@@ -262,7 +270,7 @@ fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
 # Choice function f_b(x) for different b values
 for b in [10, 20, 30, 40]:
-    probs = [choice_fn.f(x, b) for x in x_vals]
+    probs = [choice_fn(x, b) for x in x_vals]
     axes[0].plot(x_vals, probs, label=f'b={b}')
 axes[0].set_xlabel('Expected Revenue x')
 axes[0].set_ylabel('Activation Probability f_b(x)')
@@ -271,7 +279,7 @@ axes[0].legend()
 axes[0].grid(True, alpha=0.3)
 
 # Average activation probability E[f_B(x)]
-avg_probs = [population.activation_probability(x) for x in x_vals]
+avg_probs = [compute_activation_probability(x, supplier_params) for x in x_vals]
 axes[1].plot(x_vals, avg_probs, 'b-', linewidth=2)
 axes[1].set_xlabel('Expected Revenue x = p E[Ω]')
 axes[1].set_ylabel('Activation Probability μ = E[f_B(x)]')
@@ -282,7 +290,7 @@ plt.tight_layout()
 
 print("Activation probabilities at different revenue levels:")
 for rev in [10, 20, 30, 40, 50]:
-    prob = population.activation_probability(rev)
+    prob = compute_activation_probability(rev, supplier_params)
     print(f"  Revenue = {rev}: μ = {prob:.4f}")
 print("\nPlot saved to demo_supplier.png")
 print()
@@ -346,9 +354,10 @@ With linear revenue r(x) = γ×ω(x):
 """)
 
 # Create market
-allocation = QueueAllocation(L=8)
+allocation = create_queue_allocation(L=8)
 gamma = 100  # Platform revenue per unit served
-market = Market(allocation, population, gamma)
+revenue_fn = create_linear_revenue(gamma, allocation)
+market_params = MarketParameters(allocation, supplier_params, gamma)
 
 # Analyze for different demand levels
 d_a_values = [0.3, 0.4, 0.5]
@@ -362,10 +371,10 @@ results = {}
 for d_a in d_a_values:
     utilities = []
     mus = []
-    
+
     for p in payments:
-        mu = market.find_equilibrium_mu(d_a, p)
-        u = market.mean_field_utility(d_a, p)
+        mu = find_equilibrium_mu(allocation, supplier_params, d_a, p)
+        u = compute_mean_field_utility(revenue_fn, allocation, supplier_params, d_a, p)
         utilities.append(u)
         mus.append(mu)
     
@@ -411,7 +420,7 @@ print(f"  Activation at optimum: μ* = {opt_mu:.4f}")
 
 # Compute additional quantities at optimum
 x_opt = d_a / opt_mu
-q_opt = allocation.omega(x_opt)
+q_opt = compute_omega(allocation, x_opt)
 print(f"  Demand per active supplier: x* = {x_opt:.4f}")
 print(f"  Allocation per supplier: ω(x*) = {q_opt:.4f}")
 print(f"  Demand served (fraction): μ*×ω(x*) = {opt_mu * q_opt:.4f}")
@@ -419,10 +428,10 @@ print(f"  Demand served (fraction): μ*×ω(x*) = {opt_mu * q_opt:.4f}")
 # Plot equilibrium quantities
 mu_range = np.linspace(0.2, 0.8, 100)
 x_range = d_a / mu_range
-q_range = [allocation.omega(x) for x in x_range]
+q_range = [compute_omega(allocation, x) for x in x_range]
 demand_served = mu_range * np.array(q_range)
 
-axes[1, 0].plot(payments, [m * allocation.omega(d_a/m) for m in mus], 'b-', linewidth=2)
+axes[1, 0].plot(payments, [m * compute_omega(allocation, d_a/m) for m in mus], 'b-', linewidth=2)
 axes[1, 0].axvline(opt_p, color='r', linestyle='--', alpha=0.5)
 axes[1, 0].set_xlabel('Payment p')
 axes[1, 0].set_ylabel('Demand Served (μ×ω)')
@@ -430,8 +439,8 @@ axes[1, 0].set_title(f'Demand Served vs Payment (d_a={d_a})')
 axes[1, 0].grid(True, alpha=0.3)
 
 # Revenue vs cost breakdown
-revenues = [gamma * m * allocation.omega(d_a/m) for m in mus]
-costs = [payments[i] * mus[i] * allocation.omega(d_a/mus[i]) for i in range(len(payments))]
+revenues = [gamma * m * compute_omega(allocation, d_a/m) for m in mus]
+costs = [payments[i] * mus[i] * compute_omega(allocation, d_a/mus[i]) for i in range(len(payments))]
 profits = [r - c for r, c in zip(revenues, costs)]
 
 axes[1, 1].plot(payments, revenues, 'g-', label='Revenue')
