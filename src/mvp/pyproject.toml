@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mvp"
+version = "0.1.0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
