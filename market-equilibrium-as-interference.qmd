@@ -11,35 +11,37 @@ format:
             - margin = 1in
 ---
 
-Standard causal inference methods assume that the potential outcomes of a unit are unaffected by the treatment assignment of every other unit. The violation of this assumption is called interference. A classic example is vaccination, where the vaccination of others in the community reduces the spread of disease among all members of the community. The classical approach for handling interference is to partition units into groups such that all interference occurs within groups [@hudgens_toward_2008; @drew_dimmery_causal_2025]. The "General" portion of @fig-general-vs-market-interference shows an example where interference can be isolated by clustering units into groups. Another set of approaches isolate social spillovers by partitioning using a social network [@aronow_estimating_2017; @ugander_graph_2013]. Markets, however, bring interference that cannot be tackled with either of these sets of approaches. Market equilibrium is determined by all sources of supply and demand, causing the treatment of any unit to interfere with the outcomes of all units. The "Market Equilibrium" portion of @fig-general-vs-market-interference shows this interference structure. As each unit affects all other units, it is not possible to cluster units to isolate interference. On the other hand, knowing that the interference is channeled through the price effect provides sufficient structure for alternative approaches [@wager_experimenting_2020; @munro_treatment_2025].
+## Introduction
+
+Standard causal inference methods assume that the potential outcomes of a unit are unaffected by the treatment assignment of every other unit. The violation of this assumption is called interference. A classic example is vaccination, where the vaccination of others in the community reduces the spread of disease among all members of the community. The classical approach for handling interference is to partition units into groups such that all interference occurs within groups [@hudgens_toward_2008; @drew_dimmery_causal_2025]. The "General" portion of @fig-general-vs-market-interference shows an example where interference can be isolated by clustering units into groups. Another set of approaches isolate social spillovers by partitioning using a social network [@aronow_estimating_2017; @ugander_graph_2013]. Markets, however, bring interference that cannot be tackled with either of these sets of approaches. Market equilibrium is determined by all sources of supply and demand, causing the treatment of any unit to interfere with the outcomes of all units. The "Market Equilibrium" portion of @fig-general-vs-market-interference shows this interference structure. Under this global interference setting, it is not possible to cluster units to isolate interference. On the other hand, knowing that the interference is channeled through the price effect provides sufficient structure for alternative approaches [@wager_experimenting_2020; @munro_treatment_2025].
 
 ![In the general interference setting, the treatment assignment of a unit affects the outcomes of some other units directly. In this figure, interference between units is clustered in groups of 3. In markets, the treatment assignment of all units interferes with the potential outcomes of all units through the price effect (represented as P). This figure was inspired by a sketch in @stefan_wager_stefan_2021's talk.](figures/general-vs-market-interference.png){#fig-general-vs-market-interference}
 
-@wager_experimenting_2020 provides a method for finding the optimal price level $p^*$ from the perspective of the market platform by experimentation. The methodology models the market equilibrium as the proportion of suppliers that choose to participate at the price level $p$ ($\PropSupplierActive$). This approach builds on the sufficient statistics literature from economics, where intractable structural models are reduced to a small number of statistical relationships that represent elasticities [@chetty_sufficient_2008].
+## Experimenting in Market Equilibrium
 
-The optimal price level $p^*$ is the price at which the market platform's utility--the difference between overall revenue and payments to suppliers--is maximized.
-
-The platform knows its own utility function ($R$ and $r$), the market allocation mechanism ($\Omega$ and $\omega$), and the payment scheme ($\pi$), but does not know the global state ($A$), demand ($D$), or supplier behavior ($f_{B_i}$) in advance.
-
-## Market Equilibrium Through Supply and Demand
+@wager_experimenting_2020 provides a method for finding the optimal price level $p^*$ from the perspective of the market platform by experimentation. $p^*$ is the price at which the difference between overall revenue and payments to suppliers is maximized. In the paper's setup, the market consists of suppliers that can choose to become active on any given day, at which point they will be randomly allocated demand. On each day:
 
 1. The platform chooses the payment policy $\pi$ and draws the supplier-level payments $P_i \sim \pi$.
 2. Each supplier learns the payment policy $\pi$ and their payment $P_i$ and decides whether to be active.
 3. The platform allocates demand to active suppliers.
 
-The methodology simplifies market equilibrium to three "key statistics":
+The platform knows its own utility function ($R$ and $r$), the market allocation mechanism ($\Omega$ and $\omega$), and the payment scheme ($\pi$), but does not know the global state ($A$), demand ($D$), or supplier behavior ($f_{B_i}$) in advance.
+
+The methodology simplifies the market equilibrium to three key statistics:
 
 - $\mu(p)$: proportion of suppliers that are active at the price level $p$
-- $q(\mu)$: expected demand allocated per active supplier
-- $\triangle(p)$: marginal response of suppliers to changes in $p$ holding the rest of the market fixed
+- $q(\mu)$: expected demand allocated per active supplier when $\mu$ proportion of suppliers are active
+- $\triangle(p)$: marginal response of a supplier to changes in the price level $p$ holding the rest of the market fixed
 
+by using mean-field limits ($\lim_{n \rightarrow \infty}$).
 
+Interference is through "demand cannibalization": changes in the price level $p$ cause changes in the proportion of active suppliers $\mu$ which cause changes in expected demand per active supplier $q$ which changes supplier's decision to become active. This approach builds on the sufficient statistics literature from economics, where intractable structural models are reduced to a small number of statistical relationships that represent elasticities [@chetty_sufficient_2008].
 
-$$
-\MeanFieldLimit X
-$$
+![@wager_experimenting_2020 uses Parallel Finite Capacity Queues as an example of a well-behaved allocation function. This figure shows that as queue length $L$ increases, the allocation per active supplier $\omega(x)$ becomes more and more linear. In the limit $\lim_{L \rightarrow \infty}$, $\omega(x)$ allocates demand linearly: demand allocated per active supplier is literally demand per active supplier until demand is greater than maximum possible supply ($x = 1$).](figures/allocations_by_allocation_function.png){#fig-allocation-functions}
 
-"Global Interference"
+The marginal response $\triangle(p)$ is very close to the direct effect of changing $p$ [@stefan_wager_stefan_2020]
+
+![Within a given level of $d_a$, the proportion of suppliers that are active and the proportion of demand served increases as the expected payment $p$ increases. Intuitively, the proportion of suppliers that are active and the expected demand allocated per active supplier are negatively correlated. The proportion of demand served stops increasing at a lower payment level than the proportion of suppliers that are active. As $d_a$ increases, the proportion of demand served and proportion of suppliers that are active increases for any payment $p$ while demand per active supplier decreases less as $p$ increases.](figures/market_behavior_by_payment_and_demand.png){#fig-market-behavior-payment-demand}
 
 ## Directions for Future Research
 
