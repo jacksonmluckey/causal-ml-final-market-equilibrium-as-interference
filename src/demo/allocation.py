@@ -20,6 +20,8 @@ import numpy as np
 from typing import Callable, Optional
 from dataclasses import dataclass
 
+from .utils import numerical_derivative
+
 
 @dataclass
 class AllocationFunction:
@@ -46,6 +48,12 @@ class AllocationFunction:
     def __call__(self, x: float) -> float:
         """Evaluate ω(x)."""
         return self.omega(x)
+    
+    def derivative(self, x: float) -> float:
+        """Evaluate ω'(x)."""
+        if self.omega_prime is not None:
+            return self.omega_prime(x)
+        return numerical_derivative(self.omega, x)
 
 
 def create_queue_allocation(L: int = 8) -> AllocationFunction:
@@ -85,15 +93,13 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
             return 0.0
         if x > 10:  # For very large x, ω(x) → 1
             return 1.0
-
         # Handle x ≈ 1 separately to avoid numerical issues
         if abs(x - 1) < 1e-10:
             return 1 - 1/L
-
         x_L = x ** L
         return (x - x_L) / (1 - x_L)
 
-    def omega_derivative(x: float) -> float:
+    def omega_prime(x: float) -> float:
         """
         Derivative of ω(x).
 
@@ -103,36 +109,26 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
             return 1.0  # lim_{x→0} ω'(x) = 1
         if x > 10:
             return 0.0  # For large x, ω(x) ≈ 1, so derivative ≈ 0
-
         if abs(x - 1) < 1e-10:
             # Use L'Hopital's rule or series expansion near x=1
             # ω'(1) = (L-1)/(2L)
             return (L - 1) / (2 * L)
-
         x_L = x ** L
         x_Lm1 = x ** (L - 1)
-
-        # Numerator derivative: 1 - L*x^{L-1}
-        # Denominator: 1 - x^L
-        # Denominator derivative: -L*x^{L-1}
-
         numerator = (1 - L * x_Lm1) * (1 - x_L) - (x - x_L) * (-L * x_Lm1)
         denominator = (1 - x_L) ** 2
-
         return numerator / denominator
 
     return AllocationFunction(
         omega=omega,
-        omega_prime=omega_derivative,
+        omega_prime=omega_prime,
         name=f"M/M/1 Queue (L={L})"
     )
 
 
 def create_linear_allocation() -> AllocationFunction:
     """
-    Create simple linear allocation (limiting case as L → ∞).
-
-    ω(x) = min(x, 1)
+    Create simple linear allocation: ω(x) = min(x, 1) (limiting case as L → ∞).
 
     Each supplier serves all their demand up to capacity 1.
 
@@ -144,14 +140,15 @@ def create_linear_allocation() -> AllocationFunction:
     def omega(x: float) -> float:
         return min(max(x, 0), 1.0)
 
-    def omega_derivative(x: float) -> float:
-        if x <= 0 or x >= 1:
+    def omega_prime(x: float) -> float:
+        if 0 < x < 1:
+            return 1.0 
+        else:
             return 0.0
-        return 1.0
 
     return AllocationFunction(
         omega=omega,
-        omega_prime=omega_derivative,
+        omega_prime=omega_prime,
         name="Linear"
     )
 
@@ -172,16 +169,18 @@ def create_smooth_linear_allocation() -> AllocationFunction:
     def omega(x: float) -> float:
         if x <= 0:
             return 0.0
-        return 1 - np.exp(-x)
+        else:
+            return 1 - np.exp(-x)
 
-    def omega_derivative(x: float) -> float:
+    def omega_prime(x: float) -> float:
         if x <= 0:
             return 1.0
-        return np.exp(-x)
+        else:
+            return np.exp(-x)
 
     return AllocationFunction(
         omega=omega,
-        omega_prime=omega_derivative,
+        omega_prime=omega_prime,
         name="Smooth Linear"
     )
 
@@ -208,6 +207,7 @@ def create_simple_allocation():
         name="Simple Concave"
     )
 
+
 # =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================
@@ -223,10 +223,10 @@ def compute_omega(allocation: AllocationFunction, x: float) -> float:
     Returns:
         Expected demand served per active supplier
     """
-    return allocation.omega(x)
+    return allocation(x)
 
 
-def compute_omega_derivative(allocation: AllocationFunction, x: float) -> float:
+def compute_omega_prime(allocation: AllocationFunction, x: float) -> float:
     """
     Evaluate derivative ω'(x) of the allocation function.
 
@@ -237,12 +237,7 @@ def compute_omega_derivative(allocation: AllocationFunction, x: float) -> float:
     Returns:
         dω/dx evaluated at x
     """
-    if allocation.omega_prime is not None:
-        return allocation.omega_prime(x)
-    else:
-        # Numerical derivative fallback
-        from .utils import numerical_derivative
-        return numerical_derivative(allocation.omega, x)
+    return allocation.derivative(x)
 
 
 def compute_finite_allocation(allocation: AllocationFunction, d: float, t: float) -> float:
@@ -262,7 +257,8 @@ def compute_finite_allocation(allocation: AllocationFunction, d: float, t: float
     """
     if t <= 0:
         return 0.0
-    return allocation.omega(d / t)
+    else:
+        return allocation(d / t)
 
 
 def compute_expected_allocation(allocation: AllocationFunction, mu: float, d_a: float) -> float:
@@ -284,7 +280,8 @@ def compute_expected_allocation(allocation: AllocationFunction, mu: float, d_a: 
     """
     if mu <= 0:
         return 0.0
-    return allocation.omega(d_a / mu)
+    else:
+        return allocation(d_a / mu)
 
 
 def compute_expected_allocation_derivative(
@@ -309,9 +306,9 @@ def compute_expected_allocation_derivative(
     """
     if mu <= 0:
         return 0.0
-    x = d_a / mu
-    omega_deriv = compute_omega_derivative(allocation, x)
-    return -omega_deriv * d_a / (mu ** 2)
+    else:
+        x = d_a / mu
+        return -allocation.derivative(x) * d_a / (mu ** 2)
 
 
 def compute_total_demand_served(
@@ -336,7 +333,8 @@ def compute_total_demand_served(
     """
     if t <= 0:
         return 0.0
-    return t * allocation.omega(d / t)
+    else:
+        return t * allocation(d / t)
 
 
 def compute_utilization(
@@ -361,4 +359,5 @@ def compute_utilization(
     """
     if t <= 0:
         return 0.0
-    return allocation.omega(d / t)
+    else:
+        return allocation(d / t)
