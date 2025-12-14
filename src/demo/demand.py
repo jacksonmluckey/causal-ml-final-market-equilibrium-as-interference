@@ -9,7 +9,7 @@ Key properties (equations 3.1 and 3.2):
 """
 
 import numpy as np
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 from dataclasses import dataclass
 
 
