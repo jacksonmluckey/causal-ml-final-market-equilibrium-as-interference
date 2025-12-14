@@ -20,7 +20,7 @@ Main components:
 from .utils import numerical_derivative
 
 from .demand import (
-    DemandModel,
+    DemandParams,
     GlobalState,
     sample_state,
     sample_demand,
@@ -33,13 +33,9 @@ from .allocation import (
     create_linear_allocation,
     create_smooth_linear_allocation,
     create_simple_allocation,
-    compute_omega,
-    compute_omega_derivative,
-    compute_finite_allocation,
     compute_expected_allocation,
     compute_expected_allocation_derivative,
-    compute_total_demand_served,
-    compute_utilization,
+    compute_total_demand_served
 )
 
 from .supplier import (
@@ -96,15 +92,14 @@ __all__ = [
     # Utils
     'numerical_derivative',
     # Demand
-    'DemandModel', 'GlobalState',
+    'DemandParams', 'GlobalState',
     'sample_state', 'sample_demand', 'expected_demand',
     # Allocation
     'AllocationFunction',
     'create_queue_allocation', 'create_linear_allocation', 'create_smooth_linear_allocation',
-    'compute_omega', 'compute_omega_derivative',
-    'compute_finite_allocation', 'compute_expected_allocation',
+    'create_simple_allocation', 'compute_expected_allocation',
     'compute_expected_allocation_derivative',
-    'compute_total_demand_served', 'compute_utilization',
+    'compute_total_demand_served',
     # Supplier
     'ChoiceFunction', 'PrivateFeatureDistribution', 'SupplierParameters',
     'create_logistic_choice', 'create_lognormal_costs', 'create_uniform_costs',

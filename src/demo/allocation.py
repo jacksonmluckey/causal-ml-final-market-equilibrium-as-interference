@@ -212,54 +212,6 @@ def create_simple_allocation():
 # UTILITY FUNCTIONS
 # =============================================================================
 
-def compute_omega(allocation: AllocationFunction, x: float) -> float:
-    """
-    Evaluate regular allocation function ω(x).
-
-    Args:
-        allocation: The allocation function
-        x: Demand per active supplier ratio (d/t)
-
-    Returns:
-        Expected demand served per active supplier
-    """
-    return allocation(x)
-
-
-def compute_omega_prime(allocation: AllocationFunction, x: float) -> float:
-    """
-    Evaluate derivative ω'(x) of the allocation function.
-
-    Args:
-        allocation: The allocation function
-        x: Demand per active supplier ratio
-
-    Returns:
-        dω/dx evaluated at x
-    """
-    return allocation.derivative(x)
-
-
-def compute_finite_allocation(allocation: AllocationFunction, d: float, t: float) -> float:
-    """
-    Compute finite-market allocation Ω(d, t).
-
-    For large d and t, this converges to ω(d/t).
-    Default implementation uses the mean-field approximation.
-
-    Args:
-        allocation: The allocation function
-        d: Total demand
-        t: Number of active suppliers
-
-    Returns:
-        Expected demand per active supplier
-    """
-    if t <= 0:
-        return 0.0
-    else:
-        return allocation(d / t)
-
 
 def compute_expected_allocation(allocation: AllocationFunction, mu: float, d_a: float) -> float:
     """
@@ -311,10 +263,11 @@ def compute_expected_allocation_derivative(
         return -allocation.derivative(x) * d_a / (mu ** 2)
 
 
+# TODO figure out if this is right
 def compute_total_demand_served(
+    allocation: AllocationFunction,
     d: float,
-    t: float,
-    allocation: AllocationFunction
+    t: float
 ) -> float:
     """
     Compute total demand served across all active suppliers.
@@ -335,29 +288,3 @@ def compute_total_demand_served(
         return 0.0
     else:
         return t * allocation(d / t)
-
-
-def compute_utilization(
-    d: float,
-    t: float,
-    allocation: AllocationFunction
-) -> float:
-    """
-    Compute supplier utilization (fraction of capacity used).
-
-    Utilization = ω(d/t)
-
-    Returns value in [0, 1].
-
-    Args:
-        d: Total demand
-        t: Number of active suppliers
-        allocation: The allocation function
-
-    Returns:
-        Utilization fraction
-    """
-    if t <= 0:
-        return 0.0
-    else:
-        return allocation(d / t)
