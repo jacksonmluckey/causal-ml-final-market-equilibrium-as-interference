@@ -23,122 +23,23 @@ from typing import Callable, Optional, Tuple, TYPE_CHECKING
 import numpy as np
 from scipy.optimize import brentq
 
+from .utils import numerical_derivative
+from .allocation import AllocationFunction, create_queue_allocation
 from .supplier import (
     ChoiceFunction,
     PrivateFeatureDistribution,
     create_logistic_choice,
     create_lognormal_costs,
+    compute_expected_choice_derivative,
 )
 
 if TYPE_CHECKING:
     from .find_equilibrium import MeanFieldEquilibrium
 
 
-def numerical_derivative(f: Callable[[float], float], x: float, dx: float = 1e-6) -> float:
-    """Compute numerical derivative using central difference."""
-    return (f(x + dx) - f(x - dx)) / (2 * dx)
-
-
 # =============================================================================
 # ALLOCATION FUNCTIONS (from Section 3, Definition 5)
 # =============================================================================
-
-@dataclass
-class AllocationFunction:
-    """
-    Regular allocation function ω(x) as defined in Definition 5.
-    
-    A regular allocation function maps the demand-to-supply ratio x = d/μ
-    to the expected allocation per active supplier.
-    
-    Properties (Definition 5):
-        1. ω(·) is smooth, concave, and non-decreasing
-        2. lim_{x→0} ω(x) = 0 and lim_{x→∞} ω(x) ≤ 1
-        3. lim_{x→0} ω'(x) ≤ 1
-    
-    Parameters
-    ----------
-    omega : Callable[[float], float]
-        The allocation function ω(x)
-    omega_prime : Optional[Callable[[float], float]]
-        The derivative ω'(x). If None, computed numerically.
-    name : str
-        Descriptive name for the allocation function
-    """
-    omega: Callable[[float], float]
-    omega_prime: Optional[Callable[[float], float]] = None
-    name: str = "Generic"
-    
-    def __call__(self, x: float) -> float:
-        """Evaluate ω(x)."""
-        return self.omega(x)
-    
-    def derivative(self, x: float) -> float:
-        """
-        Evaluate ω'(x).
-        
-        From Equation 3.16, this is used to compute how allocation
-        changes with supply:
-            (q_a)'(μ) = -ω'(d_a/μ) · d_a/μ²
-        """
-        if self.omega_prime is not None:
-            return self.omega_prime(x)
-        else:
-            # Numerical derivative
-            return numerical_derivative(self.omega, x)
-
-
-def create_queue_allocation(L: int = 8) -> AllocationFunction:
-    """
-    Create the M/M/1 queue allocation function from Example 6.
-    
-    This models parallel finite-capacity queues where each active supplier
-    operates as a single-server M/M/1 queue with capacity L.
-    
-    From Equation 3.5:
-        ω(x) = (x - x^L) / (1 - x^L)  if x ≠ 1
-        ω(1) = 1 - 1/L                 if x = 1
-    
-    Parameters
-    ----------
-    L : int
-        Queue capacity (L ≥ 2)
-    
-    Returns
-    -------
-    AllocationFunction
-        The allocation function for M/M/1 queues
-    """
-    def omega(x: float) -> float:
-        """Allocation function ω(x) from Equation 3.5."""
-        if x < 1e-10:
-            return x  # Near x=0, ω(x) ≈ x
-        elif abs(x - 1.0) < 1e-10:
-            return 1.0 - 1.0 / L
-        else:
-            # Numerically stable computation
-            x_L = x ** L
-            return (x - x_L) / (1.0 - x_L)
-    
-    def omega_prime(x: float) -> float:
-        """Derivative ω'(x) computed analytically."""
-        if x < 1e-10:
-            return 1.0  # Near x=0, ω'(x) ≈ 1
-        elif abs(x - 1.0) < 1e-10:
-            # L'Hôpital's rule at x=1
-            return (L - 1) / (2 * L)
-        else:
-            x_L = x ** L
-            x_Lm1 = x ** (L - 1)
-            numerator = (1.0 - L * x_Lm1) * (1.0 - x_L) + (x - x_L) * L * x_Lm1
-            denominator = (1.0 - x_L) ** 2
-            return numerator / denominator
-    
-    return AllocationFunction(
-        omega=omega,
-        omega_prime=omega_prime,
-        name=f"M/M/1 Queue (L={L})"
-    )
 
 
 def create_simple_allocation() -> AllocationFunction:
@@ -189,38 +90,6 @@ class MarketParameters:
     d_a: float = 0.4
     gamma: float = 100.0
     n_monte_carlo: int = 10000
-
-
-def compute_expected_choice_derivative(
-    revenue: float,
-    choice: ChoiceFunction,
-    private_features: PrivateFeatureDistribution,
-    n_samples: int = 10000
-) -> float:
-    """
-    Compute E[f'_{B_1}(revenue) | A=a] via Monte Carlo.
-    
-    This appears in the marginal response function (Definition 9).
-    
-    Parameters
-    ----------
-    revenue : float
-        Expected revenue (= p · q)
-    choice : ChoiceFunction
-        The choice function f_b(·)
-    private_features : PrivateFeatureDistribution
-        Distribution of B_i
-    n_samples : int
-        Number of Monte Carlo samples
-    
-    Returns
-    -------
-    float
-        E[f'_{B_1}(revenue)]
-    """
-    b_samples = private_features.sample(n_samples)
-    derivs = np.array([choice.derivative(revenue, b) for b in b_samples])
-    return np.mean(derivs)
 
 
 # =============================================================================
