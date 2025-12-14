@@ -29,7 +29,7 @@ class GlobalState:
 
 
 @dataclass
-class DemandModel:
+class DemandParameters:
     """
     Configuration for demand generation.
 
@@ -50,7 +50,7 @@ def normalize_probabilities(states: Dict[str, GlobalState]) -> Dict[str, float]:
 
 
 def sample_state(
-    model: DemandModel,
+    model: DemandParameters,
     rng: np.random.Generator | None = None
 ) -> GlobalState:
     """Sample a global state A according to the state probabilities."""
@@ -73,7 +73,7 @@ def calculate_beta_params(d_a: float, k: float) -> Tuple[float, float]:
 
 
 def sample_demand(
-    model: DemandModel,
+    model: DemandParameters,
     state: GlobalState,
     n: int,
     rng: np.random.Generator | None = None

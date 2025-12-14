@@ -20,7 +20,7 @@ Main components:
 from .utils import numerical_derivative
 
 from .demand import (
-    DemandParams,
+    DemandParameters,
     GlobalState,
     sample_state,
     sample_demand,
@@ -92,7 +92,7 @@ __all__ = [
     # Utils
     'numerical_derivative',
     # Demand
-    'DemandParams', 'GlobalState',
+    'DemandParameters', 'GlobalState',
     'sample_state', 'sample_demand', 'expected_demand',
     # Allocation
     'AllocationFunction',

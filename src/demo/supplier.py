@@ -279,18 +279,15 @@ class SupplierParameters:
         The choice function f_b(·)
     private_features : PrivateFeatureDistribution
         Distribution of B_i (outside options/costs)
-    n_monte_carlo : int
-        Number of Monte Carlo samples for computing expectations
     """
     choice: ChoiceFunction
     private_features: PrivateFeatureDistribution
-    # TODO consider setting the number of Monte Carlo samples elsewhere
-    n_monte_carlo: int = 10000
 
 
 def compute_activation_probability(
+    supplier_params: SupplierParameters,
     expected_revenue: float,
-    params: SupplierParameters
+    n_monte_carlo: int
 ) -> float:
     """
     Compute μ = E[f_B(expected_revenue)].
@@ -300,10 +297,11 @@ def compute_activation_probability(
 
     Parameters
     ----------
-    expected_revenue : float
-        Expected revenue (payment × expected allocation)
     params : SupplierParameters
         Supplier population parameters
+    expected_revenue : float
+        Expected revenue (payment × expected allocation)
+    n_monte_carlo: int
 
     Returns
     -------
@@ -312,15 +310,16 @@ def compute_activation_probability(
     """
     return compute_expected_choice_probability(
         expected_revenue,
-        params.choice,
-        params.private_features,
-        params.n_monte_carlo
+        supplier_params.choice,
+        supplier_params.private_features,
+        n_monte_carlo
     )
 
 
 def compute_activation_sensitivity(
+    supplier_params: SupplierParameters,
     expected_revenue: float,
-    params: SupplierParameters
+    n_monte_carlo: int
 ) -> float:
     """
     Compute E[f'_B(expected_revenue)].
@@ -334,6 +333,7 @@ def compute_activation_sensitivity(
         Expected revenue
     params : SupplierParameters
         Supplier population parameters
+    n_monte_carlo: int
 
     Returns
     -------
@@ -342,9 +342,9 @@ def compute_activation_sensitivity(
     """
     return compute_expected_choice_derivative(
         expected_revenue,
-        params.choice,
-        params.private_features,
-        params.n_monte_carlo
+        supplier_params.choice,
+        supplier_params.private_features,
+        n_monte_carlo
     )
 
 
