@@ -21,7 +21,7 @@ References:
 
 import numpy as np
 from dataclasses import dataclass
-from typing import Optional, Tuple, List, Callable
+from typing import Optional, Tuple, List, Callable, Union
 
 from .allocation import AllocationFunction
 from .supplier import (
@@ -30,6 +30,12 @@ from .supplier import (
     SupplierParameters,
     sample_supplier_activations,
     compute_expected_choice_probability
+)
+from .demand import (
+    DemandParameters,
+    GlobalState,
+    sample_state,
+    sample_demand
 )
 
 
@@ -114,10 +120,13 @@ def run_local_experiment(
     n: int,
     p: float,
     zeta: float,
-    d_a: float,
     expected_allocation: float,
     supplier_params: SupplierParameters,
-    seed: Optional[int] = None
+    D: Optional[int] = None,
+    d_a: Optional[float] = None,
+    demand_params: Optional[DemandParameters] = None,
+    state: Optional[GlobalState] = None,
+    rng: Optional[np.random.Generator] = None
 ) -> LocalExperimentData:
     """
     Run one period of local experimentation.
@@ -136,42 +145,68 @@ def run_local_experiment(
         Base payment level
     zeta : float
         Perturbation magnitude (should scale as n^(-α) for 0 < α < 0.5)
-    d_a : float
-        Expected demand per supplier for current state
     expected_allocation : float
         Expected allocation q per active supplier at equilibrium
     supplier_params : SupplierParameters
         Supplier choice parameters
-    seed : Optional[int]
-        Random seed for reproducibility
+    D : Optional[int]
+        Realized demand (if already sampled externally)
+    d_a : Optional[float]
+        Expected demand per supplier (used if D not provided)
+    demand_params : Optional[DemandParameters]
+        Demand model parameters (used to sample D if not provided directly)
+    state : Optional[GlobalState]
+        Current global state (used with demand_params to sample D)
+    rng : Optional[np.random.Generator]
+        Random number generator
         
     Returns
     -------
     LocalExperimentData
         Data from this experimental period
+        
+    Notes
+    -----
+    Demand D is determined by (in order of priority):
+    1. If D is provided directly, use it
+    2. If demand_params and state provided, sample from demand model
+    3. If d_a provided, use deterministic D = round(n * d_a)
     """
-    if seed is not None:
-        np.random.seed(seed)
+    if rng is None:
+        rng = np.random.default_rng()
     
     # Step 1: Generate perturbations ε_i ∈ {-1, +1}
-    epsilon = np.random.choice([-1, 1], size=n)
+    epsilon = rng.choice([-1, 1], size=n)
     
     # Step 2: Set payments
     payments = p + zeta * epsilon
     
     # Step 3: Suppliers make activation decisions
-    # Note: sample_supplier_activations uses np.random internally
+    # Note: sample_supplier_activations uses np.random internally, 
+    # so we set the seed from our rng for consistency
+    internal_seed = int(rng.integers(0, 2**31))
     Z = sample_supplier_activations(
         n=n,
         payments=payments,
         expected_allocation=expected_allocation,
         params=supplier_params,
-        seed=None  # Let it use current random state
+        seed=internal_seed
     )
     
-    # Step 4: Observe outcomes
+    # Step 4: Determine demand D
+    if D is not None:
+        # Use provided demand
+        pass
+    elif demand_params is not None and state is not None:
+        # Sample from demand model
+        D = sample_demand(demand_params, state, n, rng)
+    elif d_a is not None:
+        # Use deterministic approximation
+        D = int(round(n * d_a))
+    else:
+        raise ValueError("Must provide D, (demand_params + state), or d_a")
+    
     T = int(Z.sum())
-    D = int(round(n * d_a))  # Deterministic demand for simplicity
     
     return LocalExperimentData(
         n=n,
@@ -568,12 +603,15 @@ class LearningResult:
         Sequence of gradient estimates Γ̂_1, ..., Γ̂_T
     utility_history : List[float]
         Estimated utilities (if tracked)
+    state_history : Optional[List[GlobalState]]
+        Sequence of global states A_1, ..., A_T (if using DemandParameters)
     """
     final_payment: float
     weighted_average_payment: float
     payment_history: List[float]
     gradient_history: List[float]
     utility_history: List[float]
+    state_history: Optional[List[GlobalState]] = None
 
 
 def run_learning_algorithm(
@@ -582,12 +620,13 @@ def run_learning_algorithm(
     p_init: float,
     eta: float,
     zeta: float,
-    d_a: float,
     gamma: float,
     allocation: AllocationFunction,
     supplier_params: SupplierParameters,
+    d_a: Optional[float] = None,
+    demand_params: Optional[DemandParameters] = None,
     p_bounds: Tuple[float, float] = (0.0, float('inf')),
-    seed: Optional[int] = None,
+    rng: Optional[np.random.Generator] = None,
     verbose: bool = False
 ) -> LearningResult:
     """
@@ -596,14 +635,15 @@ def run_learning_algorithm(
     This implements the first-order optimization algorithm:
     
     For t = 1, ..., T:
-        1. Deploy payment perturbations around p_t
-        2. Estimate gradient Γ̂_t via local experimentation
-        3. Update p_{t+1} via mirror descent (equation 4.5)
+        1. Sample global state A_t (if using demand_params)
+        2. Deploy payment perturbations around p_t
+        3. Estimate gradient Γ̂_t via local experimentation
+        4. Update p_{t+1} via mirror descent (equation 4.5)
     
     Parameters
     ----------
     T : int
-        Number of time periods
+        Number of time periods (days)
     n : int
         Number of suppliers per period
     p_init : float
@@ -612,58 +652,82 @@ def run_learning_algorithm(
         Step size η (should satisfy η > σ⁻¹)
     zeta : float
         Perturbation magnitude ζ (should scale as n^(-α) for 0 < α < 0.5)
-    d_a : float
-        Expected demand per supplier
     gamma : float
         Platform revenue per unit served
     allocation : AllocationFunction
         The allocation function ω
     supplier_params : SupplierParameters
         Supplier behavior parameters
+    d_a : Optional[float]
+        Fixed expected demand per supplier (simple case)
+    demand_params : Optional[DemandParameters]
+        Demand model with multiple states (full model case)
+        If provided, state is sampled each period per the paper
     p_bounds : Tuple[float, float]
         Payment bounds [c_-, c_+]
-    seed : Optional[int]
-        Random seed for reproducibility
+    rng : Optional[np.random.Generator]
+        Random number generator for reproducibility
     verbose : bool
         Whether to print progress
         
     Returns
     -------
     LearningResult
-        Learning outcomes including payment trajectory
+        Learning outcomes including payment and state trajectories
+        
+    Notes
+    -----
+    Either d_a or demand_params must be provided. If demand_params is given,
+    the global state A_t is sampled each period according to the paper's model.
     """
-    if seed is not None:
-        np.random.seed(seed)
+    if rng is None:
+        rng = np.random.default_rng()
+    
+    if d_a is None and demand_params is None:
+        raise ValueError("Must provide either d_a or demand_params")
     
     # Initialize optimizer
-    state = initialize_optimizer(p_init, p_bounds)
+    opt_state = initialize_optimizer(p_init, p_bounds)
     utility_history = []
+    state_history = [] if demand_params is not None else None
+    
+    # Import here to avoid circular imports
+    from .find_equilibrium import find_equilibrium_supply_mu
     
     for t in range(1, T + 1):
         if verbose and t % 20 == 0:
-            print(f"  Period {t}/{T}: p = {state.p:.4f}")
+            print(f"  Period {t}/{T}: p = {opt_state.p:.4f}")
         
-        # Compute expected allocation at current payment
-        # (This requires solving for equilibrium μ at current p)
-        from .find_equilibrium import find_equilibrium_supply_mu
+        # Sample global state A_t for this period
+        if demand_params is not None:
+            current_state = sample_state(demand_params, rng)
+            current_d_a = current_state.d_a
+            state_history.append(current_state)
+        else:
+            current_state = None
+            current_d_a = d_a
+        
+        # Compute expected allocation at current payment for this state
         mu_eq = find_equilibrium_supply_mu(
-            p=state.p,
-            d_a=d_a,
+            p=opt_state.p,
+            d_a=current_d_a,
             choice=supplier_params.choice,
             private_features=supplier_params.private_features,
             allocation=allocation
         )
-        q_eq = allocation(d_a / mu_eq) if mu_eq > 0 else 0.0
+        q_eq = allocation(current_d_a / mu_eq) if mu_eq > 0 else 0.0
         
-        # Run local experiment
+        # Run local experiment for this period
         data = run_local_experiment(
             n=n,
-            p=state.p,
+            p=opt_state.p,
             zeta=zeta,
-            d_a=d_a,
             expected_allocation=q_eq,
             supplier_params=supplier_params,
-            seed=None  # Use current random state
+            d_a=current_d_a,
+            demand_params=demand_params,
+            state=current_state,
+            rng=rng
         )
         
         # Estimate gradient
@@ -671,12 +735,12 @@ def run_learning_algorithm(
         
         # Track estimated utility
         x = data.D_bar / data.Z_bar if data.Z_bar > 0 else 0
-        est_utility = (gamma - state.p) * allocation(x) * data.Z_bar if data.Z_bar > 0 else 0
+        est_utility = (gamma - opt_state.p) * allocation(x) * data.Z_bar if data.Z_bar > 0 else 0
         utility_history.append(est_utility)
         
         # Update payment via mirror descent
-        state = mirror_descent_update(
-            state=state,
+        opt_state = mirror_descent_update(
+            state=opt_state,
             gradient=grad_est.gamma_hat,
             eta=eta,
             p_bounds=p_bounds
@@ -685,14 +749,15 @@ def run_learning_algorithm(
     # Compute weighted average (Corollary 8)
     weights = np.arange(1, T + 1)
     weight_sum = T * (T + 1) / 2
-    weighted_avg = np.sum(weights * np.array(state.payment_history[:-1])) / weight_sum
+    weighted_avg = np.sum(weights * np.array(opt_state.payment_history[:-1])) / weight_sum
     
     return LearningResult(
-        final_payment=state.p,
+        final_payment=opt_state.p,
         weighted_average_payment=weighted_avg,
-        payment_history=state.payment_history,
-        gradient_history=state.gradient_history,
-        utility_history=utility_history
+        payment_history=opt_state.payment_history,
+        gradient_history=opt_state.gradient_history,
+        utility_history=utility_history,
+        state_history=state_history
     )
 
 

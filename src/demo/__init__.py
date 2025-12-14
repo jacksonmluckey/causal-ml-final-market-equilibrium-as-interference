@@ -50,18 +50,9 @@ from .supplier import (
     sample_supplier_activations,
 )
 
-from .market import (
-    MarketParameters,
-)
-
 from .revenue import (
     RevenueFunction,
     create_linear_revenue
-)
-
-from .market_platform import (
-    MarketOutcome,
-    simulate_market_period,
 )
 
 from .platform_utility import (
@@ -84,6 +75,25 @@ from .marginal_response import (
     #analyze_payment_range,
 )
 
+from .local_experimentation import (
+    LocalExperimentData,
+    GradientEstimate,
+    OptimizationState,
+    LearningResult,
+    generate_payment_perturbations,
+    run_local_experiment,
+    estimate_delta_hat,
+    estimate_upsilon_hat,
+    estimate_gamma_hat,
+    estimate_utility_gradient,
+    initialize_optimizer,
+    mirror_descent_update,
+    run_learning_algorithm,
+    compute_experimentation_cost,
+    compute_optimal_zeta,
+    analyze_convergence,
+)
+
 __all__ = [
     # Utils
     'numerical_derivative',
@@ -101,15 +111,9 @@ __all__ = [
     'create_logistic_choice', 'create_lognormal_costs', 'create_uniform_costs',
     'compute_activation_probability', 'compute_activation_sensitivity',
     'sample_supplier_activations',
-    # Market Parameters
-    'MarketParameters',
     # Revenue
     'RevenueFunction',
     'create_linear_revenue',
-    # Market Platform
-    'MarketOutcome',
-    'compute_platform_utility', 'compute_platform_utility_derivative',
-    'simulate_market_period',
     # Equilibrium
     'MeanFieldEquilibrium',
     'find_equilibrium_supply_mu', 'compute_mean_field_equilibrium',
@@ -117,5 +121,11 @@ __all__ = [
     'MarginalResponseAnalysis',
     'compute_marginal_response', 'compute_supply_gradient',
     'analyze_marginal_response',
-    #'compute_utility_gradient','analyze_payment_range',
+    # Experimentation
+    'LocalExperimentData', 'GradientEstimate', 'OptimizationState', 'LearningResult',
+    'generate_payment_perturbations', 'run_local_experiment',
+    'estimate_delta_hat', 'estimate_upsilon_hat', 'estimate_gamma_hat',
+    'estimate_utility_gradient', 'initialize_optimizer', 'mirror_descent_update',
+    'run_learning_algorithm', 'compute_experimentation_cost',
+    'compute_optimal_zeta', 'analyze_convergence',
 ]
