@@ -28,6 +28,8 @@ from .supplier import (
     compute_activation_probability,
     sample_supplier_activations,
 )
+from .mean_field import MarketParameters as MeanFieldMarketParameters
+from .find_equilibrium import solve_equilibrium_supply
 
 
 @dataclass
@@ -238,54 +240,6 @@ def compute_platform_utility_derivative(
 # EQUILIBRIUM COMPUTATION
 # =============================================================================
 
-def find_equilibrium_mu(
-    allocation: AllocationFunction,
-    supplier_params: SupplierParameters,
-    d_a: float,
-    p: float,
-    tol: float = 1e-6,
-    max_iter: int = 100
-) -> float:
-    """
-    Find equilibrium activation rate μ_a(p).
-
-    Solves the fixed-point equation:
-    μ = E[f_B(p * ω(d_a/μ))]
-
-    Args:
-        allocation: Allocation function
-        supplier_params: Supplier population parameters
-        d_a: Expected demand per supplier
-        p: Payment level
-        tol: Convergence tolerance
-        max_iter: Maximum iterations
-
-    Returns:
-        Equilibrium activation rate μ
-    """
-    # Start with initial guess
-    mu = 0.5
-
-    for i in range(max_iter):
-        # Compute expected allocation given current μ
-        q = compute_expected_allocation(allocation, mu, d_a)
-
-        # Compute expected revenue
-        expected_revenue = p * q
-
-        # Compute new activation rate
-        mu_new = compute_activation_probability(expected_revenue, supplier_params)
-
-        # Check convergence
-        if abs(mu_new - mu) < tol:
-            return mu_new
-
-        # Update with some damping for stability
-        mu = 0.7 * mu_new + 0.3 * mu
-
-    return mu
-
-
 def compute_mean_field_utility(
     revenue_fn: RevenueFunction,
     allocation: AllocationFunction,
@@ -310,7 +264,21 @@ def compute_mean_field_utility(
     Returns:
         Mean-field utility
     """
-    mu = find_equilibrium_mu(allocation, supplier_params, d_a, p)
+    # Create MeanFieldMarketParameters for solve_equilibrium_supply
+    # Extract gamma from revenue function if it's a linear revenue function
+    # For now, we'll use a default value or extract from the revenue function
+    gamma = 100.0  # Default, should ideally be passed or extracted from revenue_fn
+
+    mean_field_params = MeanFieldMarketParameters(
+        allocation=allocation,
+        choice=supplier_params.choice,
+        private_features=supplier_params.private_features,
+        d_a=d_a,
+        gamma=gamma,
+        n_monte_carlo=supplier_params.n_monte_carlo
+    )
+
+    mu = solve_equilibrium_supply(p, mean_field_params)
     return compute_platform_utility(revenue_fn, allocation, d_a, mu, p)
 
 
@@ -387,12 +355,16 @@ def simulate_market_period(
 
     # First, compute equilibrium expected allocation
     # This requires solving a fixed-point equation
-    mu_eq = find_equilibrium_mu(
-        params.allocation,
-        params.supplier_params,
-        d_a,
-        p
+    mean_field_params = MeanFieldMarketParameters(
+        allocation=params.allocation,
+        choice=params.supplier_params.choice,
+        private_features=params.supplier_params.private_features,
+        d_a=d_a,
+        gamma=params.gamma,
+        n_monte_carlo=params.supplier_params.n_monte_carlo
     )
+
+    mu_eq = solve_equilibrium_supply(p, mean_field_params)
     q_eq = compute_expected_allocation(params.allocation, mu_eq, d_a)
 
     # Suppliers make activation decisions

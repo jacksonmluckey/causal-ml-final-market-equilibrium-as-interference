@@ -60,9 +60,18 @@ from .market_platform import (
     create_linear_revenue,
     compute_platform_utility,
     compute_platform_utility_derivative,
-    find_equilibrium_mu,
     compute_mean_field_utility,
     simulate_market_period,
+)
+
+from .find_equilibrium import (
+    MeanFieldEquilibrium,
+    solve_equilibrium_supply,
+    compute_mean_field_equilibrium,
+)
+
+from .mean_field import (
+    MarketParameters as MeanFieldMarketParameters,
 )
 
 __all__ = [
@@ -87,6 +96,9 @@ __all__ = [
     'RevenueFunction', 'MarketOutcome', 'MarketParameters',
     'create_linear_revenue',
     'compute_platform_utility', 'compute_platform_utility_derivative',
-    'find_equilibrium_mu', 'compute_mean_field_utility',
+    'compute_mean_field_utility',
     'simulate_market_period',
+    # Equilibrium
+    'MeanFieldEquilibrium', 'MeanFieldMarketParameters',
+    'solve_equilibrium_supply', 'compute_mean_field_equilibrium',
 ]

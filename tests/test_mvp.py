@@ -24,7 +24,8 @@ from mvp import (
     # Market Platform
     create_linear_revenue,
     MarketParameters,
-    find_equilibrium_mu,
+    MeanFieldMarketParameters,
+    solve_equilibrium_supply,
     compute_mean_field_utility,
     simulate_market_period,
 )
@@ -224,16 +225,21 @@ class TestMarketPlatform:
         allocation = create_queue_allocation(L=8)
         choice = create_logistic_choice(alpha=1.0)
         costs = create_lognormal_costs()
-        supplier_params = SupplierParameters(
-            choice=choice,
-            private_features=costs,
-            n_monte_carlo=1000
-        )
 
         d_a = 0.4
         p = 30.0
+        gamma = 100.0
 
-        mu = find_equilibrium_mu(allocation, supplier_params, d_a, p)
+        mean_field_params = MeanFieldMarketParameters(
+            allocation=allocation,
+            choice=choice,
+            private_features=costs,
+            d_a=d_a,
+            gamma=gamma,
+            n_monte_carlo=1000
+        )
+
+        mu = solve_equilibrium_supply(p, mean_field_params)
 
         # mu should be in (0, 1)
         assert 0 < mu < 1
