@@ -1,9 +1,9 @@
-from mvp import (
+from demo import (
    create_queue_allocation,
    create_linear_revenue,
    create_logistic_choice,
    create_lognormal_costs,
-   solve_equilibrium_supply,
+   find_equilibrium_supply_mu,
    compute_mean_field_utility,
    MarketParameters,
    MeanFieldMarketParameters,
@@ -47,7 +47,7 @@ for d_a in d_a_values:
     )
 
     for p in payments:
-        mu = solve_equilibrium_supply(p, mean_field_params)
+        mu = find_equilibrium_supply_mu(p, mean_field_params)
         u = compute_mean_field_utility(revenue_fn, allocation, supplier_params, d_a, p)
         utilities.append(u)
         mus.append(mu)

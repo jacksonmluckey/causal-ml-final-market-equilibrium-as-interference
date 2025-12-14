@@ -32,6 +32,7 @@ from .allocation import (
     create_queue_allocation,
     create_linear_allocation,
     create_smooth_linear_allocation,
+    create_simple_allocation,
     compute_omega,
     compute_omega_derivative,
     compute_finite_allocation,
@@ -53,25 +54,42 @@ from .supplier import (
     sample_supplier_activations,
 )
 
-from .market_platform import (
-    RevenueFunction,
-    MarketOutcome,
+from .market import (
     MarketParameters,
+)
+
+from .revenue import (
+    RevenueFunction,
     create_linear_revenue,
+    compute_total_revenue,
+    compute_revenue_per_supplier,
+    compute_revenue_derivative,
+)
+
+from .market_platform import (
+    MarketOutcome,
+    simulate_market_period,
+)
+
+from .platform_utility import (
     compute_platform_utility,
     compute_platform_utility_derivative,
-    compute_mean_field_utility,
-    simulate_market_period,
+        compute_mean_field_utility,
 )
 
 from .find_equilibrium import (
     MeanFieldEquilibrium,
-    solve_equilibrium_supply,
+    find_equilibrium_supply_mu,
     compute_mean_field_equilibrium,
 )
 
-from .mean_field import (
-    MarketParameters as MeanFieldMarketParameters,
+from .marginal_response import (
+    MarginalResponseAnalysis,
+    compute_marginal_response,
+    compute_supply_gradient,
+    analyze_marginal_response,
+    compute_utility_gradient,
+    analyze_payment_range,
 )
 
 __all__ = [
@@ -92,13 +110,23 @@ __all__ = [
     'create_logistic_choice', 'create_lognormal_costs', 'create_uniform_costs',
     'compute_activation_probability', 'compute_activation_sensitivity',
     'sample_supplier_activations',
-    # Market Platform
-    'RevenueFunction', 'MarketOutcome', 'MarketParameters',
+    # Market Parameters
+    'MarketParameters',
+    # Revenue
+    'RevenueFunction',
     'create_linear_revenue',
+    'compute_total_revenue', 'compute_revenue_per_supplier', 'compute_revenue_derivative',
+    # Market Platform
+    'MarketOutcome',
     'compute_platform_utility', 'compute_platform_utility_derivative',
     'compute_mean_field_utility',
     'simulate_market_period',
     # Equilibrium
-    'MeanFieldEquilibrium', 'MeanFieldMarketParameters',
-    'solve_equilibrium_supply', 'compute_mean_field_equilibrium',
+    'MeanFieldEquilibrium',
+    'find_equilibrium_supply_mu', 'compute_mean_field_equilibrium',
+    # Marginal Response
+    'MarginalResponseAnalysis',
+    'compute_marginal_response', 'compute_supply_gradient',
+    'analyze_marginal_response', 'compute_utility_gradient',
+    'analyze_payment_range',
 ]

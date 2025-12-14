@@ -16,8 +16,8 @@ from typing import Tuple
 import numpy as np
 from scipy.optimize import brentq
 
-from .mean_field import MarketParameters
-from .supplier import ChoiceFunction, PrivateFeatureDistribution
+from .market import MarketParameters
+from .supplier import compute_expected_choice_probability
 
 
 @dataclass
@@ -47,40 +47,7 @@ class MeanFieldEquilibrium:
     demand_supply_ratio: float  # x = d_a / μ
 
 
-def compute_expected_choice(
-    revenue: float,
-    choice: ChoiceFunction,
-    private_features: PrivateFeatureDistribution,
-    n_samples: int = 10000
-) -> float:
-    """
-    Compute E[f_{B_1}(revenue) | A=a] via Monte Carlo.
-
-    This is the expected probability of becoming active given
-    expected revenue, averaging over the private feature distribution.
-
-    Parameters
-    ----------
-    revenue : float
-        Expected revenue (= p · q)
-    choice : ChoiceFunction
-        The choice function f_b(·)
-    private_features : PrivateFeatureDistribution
-        Distribution of B_i
-    n_samples : int
-        Number of Monte Carlo samples
-
-    Returns
-    -------
-    float
-        E[f_{B_1}(revenue)]
-    """
-    b_samples = private_features.sample(n_samples)
-    probs = np.array([choice(revenue, b) for b in b_samples])
-    return np.mean(probs)
-
-
-def solve_equilibrium_supply(
+def find_equilibrium_supply_mu(
     p: float,
     params: MarketParameters,
     mu_bounds: Tuple[float, float] = (1e-6, 1.0 - 1e-6),
@@ -125,7 +92,7 @@ def solve_equilibrium_supply(
         x = params.d_a / mu  # demand-to-supply ratio
         q = params.allocation(x)  # allocation per supplier
         expected_revenue = p * q
-        expected_choice = compute_expected_choice(
+        expected_choice = compute_expected_choice_probability(
             expected_revenue,
             params.choice,
             params.private_features,
@@ -182,7 +149,7 @@ def compute_mean_field_equilibrium(
         The equilibrium quantities
     """
     # Step 1: Solve for equilibrium supply (Equation 3.13)
-    mu = solve_equilibrium_supply(p, params)
+    mu = find_equilibrium_supply_mu(p, params)
 
     # Step 2: Compute allocation (Equation 3.14)
     x = params.d_a / mu  # demand-to-supply ratio

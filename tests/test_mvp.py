@@ -1,5 +1,5 @@
 """
-Tests for refactored MVP allocation and market_platform modules.
+Tests for refactored demo allocation and market_platform modules.
 
 This test file verifies that the functional refactoring maintains
 the same behavior as the original class-based implementation.
@@ -7,7 +7,7 @@ the same behavior as the original class-based implementation.
 
 import pytest
 import numpy as np
-from mvp import (
+from demo import (
     # Allocation
     AllocationFunction,
     create_queue_allocation,
@@ -24,8 +24,7 @@ from mvp import (
     # Market Platform
     create_linear_revenue,
     MarketParameters,
-    MeanFieldMarketParameters,
-    solve_equilibrium_supply,
+    find_equilibrium_supply_mu,
     compute_mean_field_utility,
     simulate_market_period,
 )
@@ -204,21 +203,22 @@ class TestMarketPlatform:
         allocation = create_queue_allocation(L=8)
         choice = create_logistic_choice(alpha=1.0)
         costs = create_lognormal_costs()
-        supplier_params = SupplierParameters(
-            choice=choice,
-            private_features=costs,
-            n_monte_carlo=1000
-        )
 
         market_params = MarketParameters(
             allocation=allocation,
-            supplier_params=supplier_params,
-            gamma=100.0
+            choice=choice,
+            private_features=costs,
+            d_a=0.4,
+            gamma=100.0,
+            n_monte_carlo=1000
         )
 
         assert market_params.allocation == allocation
-        assert market_params.supplier_params == supplier_params
+        assert market_params.choice == choice
+        assert market_params.private_features == costs
+        assert market_params.d_a == 0.4
         assert market_params.gamma == 100.0
+        assert market_params.n_monte_carlo == 1000
 
     def test_equilibrium_computation(self):
         """Test equilibrium activation rate computation."""
@@ -230,7 +230,7 @@ class TestMarketPlatform:
         p = 30.0
         gamma = 100.0
 
-        mean_field_params = MeanFieldMarketParameters(
+        mean_field_params = MarketParameters(
             allocation=allocation,
             choice=choice,
             private_features=costs,
@@ -239,7 +239,7 @@ class TestMarketPlatform:
             n_monte_carlo=1000
         )
 
-        mu = solve_equilibrium_supply(p, mean_field_params)
+        mu = find_equilibrium_supply_mu(p, mean_field_params)
 
         # mu should be in (0, 1)
         assert 0 < mu < 1
@@ -307,16 +307,14 @@ class TestMarketPlatform:
         allocation = create_queue_allocation(L=8)
         choice = create_logistic_choice(alpha=1.0)
         costs = create_lognormal_costs()
-        supplier_params = SupplierParameters(
-            choice=choice,
-            private_features=costs,
-            n_monte_carlo=1000
-        )
 
         market_params = MarketParameters(
             allocation=allocation,
-            supplier_params=supplier_params,
-            gamma=100.0
+            choice=choice,
+            private_features=costs,
+            d_a=0.4,
+            gamma=100.0,
+            n_monte_carlo=1000
         )
 
         # Simulate one period
@@ -324,7 +322,6 @@ class TestMarketPlatform:
         outcome = simulate_market_period(
             market_params,
             n=100,
-            d_a=0.4,
             p=30.0
         )
 

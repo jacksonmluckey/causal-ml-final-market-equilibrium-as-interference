@@ -1,8 +1,8 @@
 
 ```{python}
-from demo.mvp import supplier
+from demo.demo import supplier
 ```
-from demo.mvp..supplier import create_lognormal_costs
+from demo.demo..supplier import create_lognormal_costs
 
 
 ```{python}

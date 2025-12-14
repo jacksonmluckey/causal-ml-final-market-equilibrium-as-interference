@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mvp"
+name = "demo"
 version = "0.1.0"
 
 [tool.hatch.build.targets.wheel]

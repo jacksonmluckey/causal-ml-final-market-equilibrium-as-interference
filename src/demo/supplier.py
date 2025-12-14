@@ -204,7 +204,7 @@ def create_uniform_costs(low: float = 5.0, high: float = 50.0) -> PrivateFeature
 
 
 def compute_expected_choice_probability(
-    x: float,
+    revenue: float,
     choice: ChoiceFunction,
     private_features: PrivateFeatureDistribution,
     n_samples: int = 10000
@@ -217,8 +217,8 @@ def compute_expected_choice_probability(
 
     Parameters
     ----------
-    x : float
-        Expected revenue
+    revenue : float
+        Expected revenue (x)
     choice : ChoiceFunction
         The choice function f_b(·)
     private_features : PrivateFeatureDistribution
@@ -232,7 +232,7 @@ def compute_expected_choice_probability(
         E[f_B(x)]
     """
     b_samples = private_features.sample(n_samples)
-    probs = np.array([choice(x, b) for b in b_samples])
+    probs = np.array([choice(revenue, b) for b in b_samples])
     return np.mean(probs)
 
 

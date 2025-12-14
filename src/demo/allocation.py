@@ -186,6 +186,28 @@ def create_smooth_linear_allocation() -> AllocationFunction:
     )
 
 
+def create_simple_allocation():
+    """
+    Create a simple concave allocation function for testing.
+
+    Uses ω(x) = x / (1 + x), which satisfies all properties in Definition 5:
+        - Smooth, concave, non-decreasing
+        - ω(0) = 0, ω(∞) = 1
+        - ω'(0) = 1
+    """
+
+    def omega(x: float) -> float:
+        return x / (1.0 + x)
+
+    def omega_prime(x: float) -> float:
+        return 1.0 / (1.0 + x) ** 2
+
+    return AllocationFunction(
+        omega=omega,
+        omega_prime=omega_prime,
+        name="Simple Concave"
+    )
+
 # =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================

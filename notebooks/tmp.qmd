@@ -121,7 +121,7 @@ I've implemented Sections 3.1 and 3.2 of Wager & Xu (2021) with detailed explana
 ### Key Concepts Implemented
 
 **Section 3.1: Mean-Field Asymptotics**
-- **`solve_equilibrium_supply()`**: Finds μ_a(p) by solving the fixed-point equation (Eq. 3.13)
+- **`find_equilibrium_supply_mu()`**: Finds μ_a(p) by solving the fixed-point equation (Eq. 3.13)
 - **`compute_mean_field_equilibrium()`**: Computes all equilibrium quantities (Lemma 2)
 - The allocation function ω(x) from M/M/1 queues (Example 6, Eq. 3.5)
 - The logistic choice function (Example 7, Eq. 3.7)
@@ -138,7 +138,7 @@ I've implemented Sections 3.1 and 3.2 of Wager & Xu (2021) with detailed explana
 |----------|-------------|----------|
 | 3.5 | M/M/1 queue allocation | `create_queue_allocation()` |
 | 3.7 | Logistic choice | `create_logistic_choice()` |
-| 3.13 | Equilibrium supply | `solve_equilibrium_supply()` |
+| 3.13 | Equilibrium supply | `find_equilibrium_supply_mu()` |
 | 3.14-3.15 | Allocation & utility | `compute_mean_field_equilibrium()` |
 | 3.17-3.20 | Marginal response & gradient | `analyze_marginal_response()` |
 | 3.21 | Interference decomposition | `MarginalResponseAnalysis` |

@@ -1,4 +1,4 @@
-from mvp import (
+from demo import (
     create_queue_allocation,
     create_linear_allocation,
     compute_omega,
