@@ -10,19 +10,8 @@ Key equations:
 The platform wants to maximize expected utility by choosing the right payment p.
 """
 
-from .allocation import (
-    AllocationFunction,
-    compute_omega,
-    compute_omega_derivative,
-    compute_expected_allocation,
-)
-from .supplier import SupplierParameters
-from .market import MarketParameters
-from .find_equilibrium import find_equilibrium_supply_mu
-from .revenue import (
-    RevenueFunction,
-    compute_revenue_derivative,
-)
+from .allocation import AllocationFunction
+from .revenue import RevenueFunction
 
 
 def compute_platform_utility(
@@ -53,7 +42,7 @@ def compute_platform_utility(
     x = d_a / mu  # Demand per active supplier
 
     revenue_per_supplier = revenue_fn.r(x)
-    payment_per_supplier = p * compute_omega(allocation, x)
+    payment_per_supplier = p * allocation(x)
 
     profit_per_active_supplier = revenue_per_supplier - payment_per_supplier
 
@@ -91,9 +80,9 @@ def compute_platform_utility_derivative(
     x = d_a / mu
 
     r_val = revenue_fn.r(x)
-    r_deriv = compute_revenue_derivative(revenue_fn, x)
-    omega_val = compute_omega(allocation, x)
-    omega_deriv = compute_omega_derivative(allocation, x)
+    r_deriv = revenue_fn.r_prime(x)
+    omega_val = allocation(x)
+    omega_deriv = allocation.derivative(x)
 
     # Term from change in μ
     bracket_term = (r_val - p * omega_val -
@@ -104,45 +93,3 @@ def compute_platform_utility_derivative(
     direct_term = -omega_val * mu
 
     return mu_contribution + direct_term
-
-
-def compute_mean_field_utility(
-    revenue_fn: RevenueFunction,
-    allocation: AllocationFunction,
-    supplier_params: SupplierParameters,
-    d_a: float,
-    p: float
-) -> float:
-    """
-    Compute mean-field utility at payment level p.
-
-    u_a(p) = (r(d_a/μ) - p*ω(d_a/μ)) * μ
-
-    where μ = μ_a(p) is the equilibrium activation rate.
-
-    Args:
-        revenue_fn: Revenue function
-        allocation: Allocation function
-        supplier_params: Supplier population parameters
-        d_a: Expected demand per supplier
-        p: Payment level
-
-    Returns:
-        Mean-field utility
-    """
-    # Create MeanFieldMarketParameters for find_equilibrium_supply_mu
-    # Extract gamma from revenue function if it's a linear revenue function
-    # For now, we'll use a default value or extract from the revenue function
-    gamma = 100.0  # Default, should ideally be passed or extracted from revenue_fn
-
-    mean_field_params = MarketParameters(
-        allocation=allocation,
-        choice=supplier_params.choice,
-        private_features=supplier_params.private_features,
-        d_a=d_a,
-        gamma=gamma,
-        n_monte_carlo=supplier_params.n_monte_carlo
-    )
-
-    mu = find_equilibrium_supply_mu(p, mean_field_params)
-    return compute_platform_utility(revenue_fn, allocation, d_a, mu, p)

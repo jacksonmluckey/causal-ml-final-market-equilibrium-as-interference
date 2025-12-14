@@ -15,8 +15,8 @@ from dataclasses import dataclass
 
 from .allocation import (
     AllocationFunction,
-    compute_omega,
-    compute_omega_derivative,
+    #compute_omega,
+    #compute_omega_derivative,
 )
 
 
@@ -67,73 +67,14 @@ def create_linear_revenue(gamma: float, allocation: AllocationFunction) -> Reven
     """
     def r(x: float) -> float:
         """r(x) = γ * ω(x)"""
-        return gamma * compute_omega(allocation, x)
+        return gamma * allocation(x)
 
     def r_prime(x: float) -> float:
         """dr/dx = γ * ω'(x)"""
-        return gamma * compute_omega_derivative(allocation, x)
+        return gamma * allocation.derivative(x)
 
     return RevenueFunction(
         r=r,
         r_prime=r_prime,
         name=f"Linear (γ={gamma})"
     )
-
-
-def compute_total_revenue(
-    revenue_fn: RevenueFunction,
-    d: float,
-    t: float
-) -> float:
-    """
-    Compute total revenue R(d, t) = r(d/t) * t.
-
-    Args:
-        revenue_fn: Revenue function
-        d: Total demand
-        t: Number of active suppliers
-
-    Returns:
-        Total revenue
-    """
-    if t <= 0:
-        return 0.0
-    return revenue_fn.r(d / t) * t
-
-
-def compute_revenue_per_supplier(
-    revenue_fn: RevenueFunction,
-    x: float
-) -> float:
-    """
-    Compute revenue per supplier r(x) when demand ratio is x = d/t.
-
-    Args:
-        revenue_fn: Revenue function
-        x: Demand per active supplier ratio
-
-    Returns:
-        Revenue per supplier
-    """
-    return revenue_fn.r(x)
-
-
-def compute_revenue_derivative(
-    revenue_fn: RevenueFunction,
-    x: float
-) -> float:
-    """
-    Compute derivative dr/dx.
-
-    Args:
-        revenue_fn: Revenue function
-        x: Demand per active supplier ratio
-
-    Returns:
-        dr/dx
-    """
-    if revenue_fn.r_prime is not None:
-        return revenue_fn.r_prime(x)
-    else:
-        from .utils import numerical_derivative
-        return numerical_derivative(revenue_fn.r, x)

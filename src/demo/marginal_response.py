@@ -18,7 +18,9 @@ from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 import numpy as np
 
-from .market import MarketParameters
+from .allocation import AllocationFunction
+from .supplier import ChoiceFunction, PrivateFeatureDistribution
+from .find_equilibrium import compute_mean_field_equilibrium
 from .supplier import compute_expected_choice_derivative
 
 if TYPE_CHECKING:
@@ -62,8 +64,10 @@ class MarginalResponseAnalysis:
 
 def compute_marginal_response(
     p: float,
-    equilibrium: "MeanFieldEquilibrium",
-    params: MarketParameters
+    equilibrium: MeanFieldEquilibrium,
+    choice: ChoiceFunction,
+    private_features: PrivateFeatureDistribution,
+    n_monte_carlo: int = 10000
 ) -> float:
     """
     Compute the marginal response function Δ_a(p).
@@ -98,9 +102,9 @@ def compute_marginal_response(
     # E[f'_{B_1}(p·q)]
     expected_choice_deriv = compute_expected_choice_derivative(
         expected_revenue,
-        params.choice,
-        params.private_features,
-        params.n_monte_carlo
+        choice,
+        private_features,
+        n_monte_carlo
     )
 
     # Δ = q · E[f'_B(p·q)]
@@ -111,9 +115,9 @@ def compute_marginal_response(
 
 def compute_supply_gradient(
     p: float,
-    equilibrium: "MeanFieldEquilibrium",
+    equilibrium: MeanFieldEquilibrium,
     delta: float,
-    params: MarketParameters
+    allocation: AllocationFunction
 ) -> float:
     """
     Compute the actual supply gradient dμ_a(p)/dp using Lemma 4.
@@ -138,8 +142,6 @@ def compute_supply_gradient(
         Pre-computed equilibrium
     delta : float
         Marginal response Δ_a(p)
-    params : MarketParameters
-        Model parameters
 
     Returns
     -------
@@ -151,7 +153,7 @@ def compute_supply_gradient(
     x = equilibrium.demand_supply_ratio  # d_a/μ
 
     # ω'(d_a/μ)
-    omega_prime = params.allocation.derivative(x)
+    omega_prime = allocation.derivative(x)
 
     # From Equation 3.20:
     # μ' = Δ / (1 + p·d_a·Δ·ω'(x) / (μ²·ω(x)))
@@ -160,7 +162,7 @@ def compute_supply_gradient(
     if abs(q) < 1e-10:  # Avoid division by zero
         return delta
 
-    interference_term = (p * params.d_a * delta * omega_prime) / (mu**2 * q)
+    interference_term = (p * equilibrium.d_a * delta * omega_prime) / (mu**2 * q)
 
     # Note: omega_prime is typically positive for our allocation functions,
     # and delta is positive, so interference_term > 0
@@ -173,8 +175,11 @@ def compute_supply_gradient(
 
 def analyze_marginal_response(
     p: float,
-    params: MarketParameters,
-    equilibrium: Optional["MeanFieldEquilibrium"] = None
+    equilibrium: MeanFieldEquilibrium,
+    choice: ChoiceFunction,
+    private_features: PrivateFeatureDistribution,
+    allocation: AllocationFunction,
+    n_monte_carlo: int = 10000
 ) -> MarginalResponseAnalysis:
     """
     Comprehensive analysis of the marginal response function.
@@ -199,8 +204,6 @@ def analyze_marginal_response(
     ----------
     p : float
         Payment per unit of demand served
-    params : MarketParameters
-        Model parameters
     equilibrium : Optional[MeanFieldEquilibrium]
         Pre-computed equilibrium (computed if not provided)
 
@@ -209,20 +212,21 @@ def analyze_marginal_response(
     MarginalResponseAnalysis
         Complete analysis of marginal response and interference
     """
-    from .find_equilibrium import compute_mean_field_equilibrium
-
-    # Compute equilibrium if not provided
-    if equilibrium is None:
-        equilibrium = compute_mean_field_equilibrium(p, params)
 
     # Marginal response (Definition 9)
-    delta = compute_marginal_response(p, equilibrium, params)
+    delta = compute_marginal_response(
+        p,
+        equilibrium,
+        choice,
+        private_features,
+        n_monte_carlo
+    )
 
     # Decomposition of interference factor (Equation 3.21)
     mu = equilibrium.mu
     q = equilibrium.q
     x = equilibrium.demand_supply_ratio
-    omega_prime = params.allocation.derivative(x)
+    omega_prime = allocation.derivative(x)
 
     # Scaled marginal sensitivity: Σ^Δ = p·Δ/μ
     sigma_delta = (p * delta) / mu if mu > 1e-10 else 0.0
@@ -246,129 +250,129 @@ def analyze_marginal_response(
     )
 
 
-def compute_utility_gradient(
-    p: float,
-    params: MarketParameters,
-    equilibrium: Optional["MeanFieldEquilibrium"] = None,
-    marginal_analysis: Optional[MarginalResponseAnalysis] = None
-) -> float:
-    """
-    Compute the utility gradient du_a(p)/dp.
+# def compute_utility_gradient(
+#     p: float,
+#     params: MarketParameters,
+#     equilibrium: Optional["MeanFieldEquilibrium"] = None,
+#     marginal_analysis: Optional[MarginalResponseAnalysis] = None
+# ) -> float:
+#     """
+#     Compute the utility gradient du_a(p)/dp.
 
-    From Proposition 12 in the appendix, for linear revenue r(x) = γ·ω(x):
-        u'_a(p) = μ'_a(p) · [r(x) - p·ω(x) - (r'(x) - p·ω'(x))·x] - ω(x)·μ_a(p)
+#     From Proposition 12 in the appendix, for linear revenue r(x) = γ·ω(x):
+#         u'_a(p) = μ'_a(p) · [r(x) - p·ω(x) - (r'(x) - p·ω'(x))·x] - ω(x)·μ_a(p)
 
-    where x = d_a/μ_a(p).
+#     where x = d_a/μ_a(p).
 
-    For r(x) = γ·ω(x), this simplifies to:
-        u'_a(p) = μ'_a(p) · [(γ-p)·ω(x) - (γ-p)·ω'(x)·x] - ω(x)·μ_a(p)
-                = μ'_a(p) · (γ-p) · [ω(x) - ω'(x)·x] - ω(x)·μ_a(p)
+#     For r(x) = γ·ω(x), this simplifies to:
+#         u'_a(p) = μ'_a(p) · [(γ-p)·ω(x) - (γ-p)·ω'(x)·x] - ω(x)·μ_a(p)
+#                 = μ'_a(p) · (γ-p) · [ω(x) - ω'(x)·x] - ω(x)·μ_a(p)
 
-    Parameters
-    ----------
-    p : float
-        Payment
-    params : MarketParameters
-        Model parameters
-    equilibrium : Optional[MeanFieldEquilibrium]
-        Pre-computed equilibrium
-    marginal_analysis : Optional[MarginalResponseAnalysis]
-        Pre-computed marginal response analysis
+#     Parameters
+#     ----------
+#     p : float
+#         Payment
+#     params : MarketParameters
+#         Model parameters
+#     equilibrium : Optional[MeanFieldEquilibrium]
+#         Pre-computed equilibrium
+#     marginal_analysis : Optional[MarginalResponseAnalysis]
+#         Pre-computed marginal response analysis
 
-    Returns
-    -------
-    float
-        Utility gradient du_a(p)/dp
-    """
-    from .find_equilibrium import compute_mean_field_equilibrium
+#     Returns
+#     -------
+#     float
+#         Utility gradient du_a(p)/dp
+#     """
+#     from .find_equilibrium import compute_mean_field_equilibrium
 
-    if equilibrium is None:
-        equilibrium = compute_mean_field_equilibrium(p, params)
+#     if equilibrium is None:
+#         equilibrium = compute_mean_field_equilibrium(p, params)
 
-    if marginal_analysis is None:
-        marginal_analysis = analyze_marginal_response(p, params, equilibrium)
+#     if marginal_analysis is None:
+#         marginal_analysis = analyze_marginal_response(p, params, equilibrium)
 
-    mu = equilibrium.mu
-    q = equilibrium.q  # ω(x)
-    x = equilibrium.demand_supply_ratio
-    omega_prime = params.allocation.derivative(x)
-    mu_prime = marginal_analysis.mu_prime
+#     mu = equilibrium.mu
+#     q = equilibrium.q  # ω(x)
+#     x = equilibrium.demand_supply_ratio
+#     omega_prime = params.allocation.derivative(x)
+#     mu_prime = marginal_analysis.mu_prime
 
-    # From Proposition 12 with r(x) = γ·ω(x):
-    # Term 1: μ' · (γ-p) · [ω(x) - ω'(x)·x]
-    # Term 2: -ω(x) · μ
+#     # From Proposition 12 with r(x) = γ·ω(x):
+#     # Term 1: μ' · (γ-p) · [ω(x) - ω'(x)·x]
+#     # Term 2: -ω(x) · μ
 
-    bracket_term = q - omega_prime * x  # ω(x) - ω'(x)·x
+#     bracket_term = q - omega_prime * x  # ω(x) - ω'(x)·x
 
-    u_prime = mu_prime * (params.gamma - p) * bracket_term - q * mu
+#     u_prime = mu_prime * (params.gamma - p) * bracket_term - q * mu
 
-    return u_prime
+#     return u_prime
 
 
-# =============================================================================
-# CONVENIENCE FUNCTIONS FOR ANALYSIS
-# =============================================================================
+# # =============================================================================
+# # CONVENIENCE FUNCTIONS FOR ANALYSIS
+# # =============================================================================
 
-def analyze_payment_range(
-    params: MarketParameters,
-    p_min: float = 5.0,
-    p_max: float = 60.0,
-    n_points: int = 20
-) -> dict:
-    """
-    Analyze equilibrium and marginal response across a range of payments.
+# def analyze_payment_range(
+#     params: MarketParameters,
+#     p_min: float = 5.0,
+#     p_max: float = 60.0,
+#     n_points: int = 20
+# ) -> dict:
+#     """
+#     Analyze equilibrium and marginal response across a range of payments.
 
-    Useful for understanding how the market behaves and for finding
-    the optimal payment.
+#     Useful for understanding how the market behaves and for finding
+#     the optimal payment.
 
-    Parameters
-    ----------
-    params : MarketParameters
-        Model parameters
-    p_min, p_max : float
-        Payment range to analyze
-    n_points : int
-        Number of points to evaluate
+#     Parameters
+#     ----------
+#     params : MarketParameters
+#         Model parameters
+#     p_min, p_max : float
+#         Payment range to analyze
+#     n_points : int
+#         Number of points to evaluate
 
-    Returns
-    -------
-    dict
-        Dictionary containing arrays of:
-        - payments
-        - equilibrium supply (mu)
-        - allocation rates (q)
-        - utilities (u)
-        - marginal responses (delta)
-        - supply gradients (mu_prime)
-        - utility gradients (u_prime)
-        - interference factors
-    """
-    from .find_equilibrium import compute_mean_field_equilibrium
+#     Returns
+#     -------
+#     dict
+#         Dictionary containing arrays of:
+#         - payments
+#         - equilibrium supply (mu)
+#         - allocation rates (q)
+#         - utilities (u)
+#         - marginal responses (delta)
+#         - supply gradients (mu_prime)
+#         - utility gradients (u_prime)
+#         - interference factors
+#     """
+#     from .find_equilibrium import compute_mean_field_equilibrium
 
-    payments = np.linspace(p_min, p_max, n_points)
+#     payments = np.linspace(p_min, p_max, n_points)
 
-    results = {
-        'payments': payments,
-        'mu': np.zeros(n_points),
-        'q': np.zeros(n_points),
-        'u': np.zeros(n_points),
-        'delta': np.zeros(n_points),
-        'mu_prime': np.zeros(n_points),
-        'u_prime': np.zeros(n_points),
-        'interference_factor': np.zeros(n_points)
-    }
+#     results = {
+#         'payments': payments,
+#         'mu': np.zeros(n_points),
+#         'q': np.zeros(n_points),
+#         'u': np.zeros(n_points),
+#         'delta': np.zeros(n_points),
+#         'mu_prime': np.zeros(n_points),
+#         'u_prime': np.zeros(n_points),
+#         'interference_factor': np.zeros(n_points)
+#     }
 
-    for i, p in enumerate(payments):
-        eq = compute_mean_field_equilibrium(p, params)
-        analysis = analyze_marginal_response(p, params, eq)
-        u_prime = compute_utility_gradient(p, params, eq, analysis)
+#     for i, p in enumerate(payments):
+#         eq = compute_mean_field_equilibrium(p, params)
+#         analysis = analyze_marginal_response(p, params, eq)
+#         u_prime = compute_utility_gradient(p, params, eq, analysis)
 
-        results['mu'][i] = eq.mu
-        results['q'][i] = eq.q
-        results['u'][i] = eq.u
-        results['delta'][i] = analysis.delta
-        results['mu_prime'][i] = analysis.mu_prime
-        results['u_prime'][i] = u_prime
-        results['interference_factor'][i] = analysis.interference_factor
+#         results['mu'][i] = eq.mu
+#         results['q'][i] = eq.q
+#         results['u'][i] = eq.u
+#         results['delta'][i] = analysis.delta
+#         results['mu_prime'][i] = analysis.mu_prime
+#         results['u_prime'][i] = u_prime
+#         results['interference_factor'][i] = analysis.interference_factor
 
-    return results
+#     return results

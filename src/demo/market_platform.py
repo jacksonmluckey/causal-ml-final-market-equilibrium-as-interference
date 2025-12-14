@@ -9,7 +9,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 from .allocation import (
-    compute_finite_allocation,
+    #compute_finite_allocation,
     compute_expected_allocation,
 )
 from .supplier import (

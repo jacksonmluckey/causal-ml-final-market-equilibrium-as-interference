@@ -56,10 +56,7 @@ from .market import (
 
 from .revenue import (
     RevenueFunction,
-    create_linear_revenue,
-    compute_total_revenue,
-    compute_revenue_per_supplier,
-    compute_revenue_derivative,
+    create_linear_revenue
 )
 
 from .market_platform import (
@@ -69,8 +66,7 @@ from .market_platform import (
 
 from .platform_utility import (
     compute_platform_utility,
-    compute_platform_utility_derivative,
-        compute_mean_field_utility,
+    compute_platform_utility_derivative
 )
 
 from .find_equilibrium import (
@@ -84,8 +80,8 @@ from .marginal_response import (
     compute_marginal_response,
     compute_supply_gradient,
     analyze_marginal_response,
-    compute_utility_gradient,
-    analyze_payment_range,
+    #compute_utility_gradient,
+    #analyze_payment_range,
 )
 
 __all__ = [
@@ -110,11 +106,9 @@ __all__ = [
     # Revenue
     'RevenueFunction',
     'create_linear_revenue',
-    'compute_total_revenue', 'compute_revenue_per_supplier', 'compute_revenue_derivative',
     # Market Platform
     'MarketOutcome',
     'compute_platform_utility', 'compute_platform_utility_derivative',
-    'compute_mean_field_utility',
     'simulate_market_period',
     # Equilibrium
     'MeanFieldEquilibrium',
@@ -122,6 +116,6 @@ __all__ = [
     # Marginal Response
     'MarginalResponseAnalysis',
     'compute_marginal_response', 'compute_supply_gradient',
-    'analyze_marginal_response', 'compute_utility_gradient',
-    'analyze_payment_range',
+    'analyze_marginal_response',
+    #'compute_utility_gradient','analyze_payment_range',
 ]

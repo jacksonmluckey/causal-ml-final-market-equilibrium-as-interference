@@ -51,7 +51,7 @@ class MeanFieldEquilibrium:
     d_a: float
     mu: float                   # Equilibrium supply fraction
     q: float                    # Allocation per active supplier
-    u: float                    # Platform utility
+    #u: float                    # Platform utility
     demand_supply_ratio: float  # x = d_a / μ
 
 
@@ -159,8 +159,6 @@ def compute_mean_field_equilibrium(
     ----------
     p : float
         Payment per unit of demand served
-    params : MarketParameters
-        Model parameters
 
     Returns
     -------
@@ -183,13 +181,14 @@ def compute_mean_field_equilibrium(
     # Step 3: Compute utility (Equation 3.15)
     # Using linear revenue: r(x) = γ · ω(x)
     # u_a(p) = (r(d_a/μ) - p·ω(d_a/μ)) · μ = (γ - p) · q · μ
-    u = (gamma - p) * q * mu
+    # TODO switch to using the utility in platform_utility
+    #u = (gamma - p) * q * mu
 
     return MeanFieldEquilibrium(
         p=p,
         d_a=d_a,
         mu=mu,
         q=q,
-        u=u,
+        #u=u,
         demand_supply_ratio=x
     )
