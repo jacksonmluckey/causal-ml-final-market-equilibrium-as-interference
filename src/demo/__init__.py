@@ -75,11 +75,20 @@ from .marginal_response import (
     #analyze_payment_range,
 )
 
+from .experiment_results import (
+    TimePointData,
+    ExperimentParams,
+    ExperimentResults,
+    Experiment,
+    experiment_to_dataframe,
+    compare_experiments,
+    compute_cumulative_regret,
+    analyze_convergence,
+)
+
 from .local_experimentation import (
-    LocalExperimentData,
     GradientEstimate,
     OptimizationState,
-    LearningResult,
     generate_payment_perturbations,
     run_local_experiment,
     estimate_delta_hat,
@@ -91,7 +100,11 @@ from .local_experimentation import (
     run_learning_algorithm,
     compute_experimentation_cost,
     compute_optimal_zeta,
-    analyze_convergence,
+)
+
+from .global_experimentation import (
+    run_global_experiment,
+    run_global_learning,
 )
 
 __all__ = [
@@ -121,11 +134,17 @@ __all__ = [
     'MarginalResponseAnalysis',
     'compute_marginal_response', 'compute_supply_gradient',
     'analyze_marginal_response',
-    # Experimentation
-    'LocalExperimentData', 'GradientEstimate', 'OptimizationState', 'LearningResult',
+    # Experiment Results
+    'TimePointData', 'ExperimentParams', 'ExperimentResults', 'Experiment',
+    'experiment_to_dataframe', 'compare_experiments', 'compute_cumulative_regret',
+    'analyze_convergence',
+    # Local Experimentation
+    'GradientEstimate', 'OptimizationState',
     'generate_payment_perturbations', 'run_local_experiment',
     'estimate_delta_hat', 'estimate_upsilon_hat', 'estimate_gamma_hat',
     'estimate_utility_gradient', 'initialize_optimizer', 'mirror_descent_update',
     'run_learning_algorithm', 'compute_experimentation_cost',
-    'compute_optimal_zeta', 'analyze_convergence',
+    'compute_optimal_zeta',
+    # Global Experimentation
+    'run_global_experiment', 'run_global_learning',
 ]

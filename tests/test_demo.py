@@ -21,9 +21,7 @@ from demo import (
     compute_activation_probability,
     # Market Platform
     create_linear_revenue,
-    MarketParameters,
     find_equilibrium_supply_mu,
-    simulate_market_period,
 )
 
 

@@ -19,27 +19,12 @@ from typing import Optional, List, Tuple
 from .allocation import AllocationFunction
 from .supplier import SupplierParameters, sample_supplier_activations
 from .demand import DemandParameters, GlobalState, sample_state, sample_demand
-
-
-@dataclass
-class GlobalExperimentData:
-    """Data from one period of global experimentation."""
-    n: int
-    p: float
-    D: int          # Realized demand
-    T: int          # Active suppliers
-    S: float        # Total demand served
-    U: float        # Realized utility (revenue - payments)
-
-
-@dataclass 
-class GlobalLearningResult:
-    """Results from global experimentation algorithm."""
-    final_payment: float
-    average_payment: float
-    payment_history: List[float]
-    utility_history: List[float]
-    state_history: Optional[List[GlobalState]] = None
+from .experiment_results import (
+    TimePointData,
+    ExperimentParams,
+    ExperimentResults,
+    Experiment
+)
 
 
 def run_global_experiment(
@@ -48,15 +33,44 @@ def run_global_experiment(
     gamma: float,
     allocation: AllocationFunction,
     supplier_params: SupplierParameters,
+    t: int = 0,
     d_a: Optional[float] = None,
     demand_params: Optional[DemandParameters] = None,
     state: Optional[GlobalState] = None,
     rng: Optional[np.random.Generator] = None
-) -> GlobalExperimentData:
+) -> TimePointData:
     """
     Run one period of global experimentation.
-    
+
     All suppliers receive the SAME payment p (no perturbations).
+
+    Parameters
+    ----------
+    n : int
+        Number of suppliers
+    p : float
+        Payment level for all suppliers
+    gamma : float
+        Platform revenue per unit
+    allocation : AllocationFunction
+        The allocation function ω
+    supplier_params : SupplierParameters
+        Supplier behavior parameters
+    t : int
+        Time period (1-indexed)
+    d_a : Optional[float]
+        Expected demand per supplier (if not using demand_params)
+    demand_params : Optional[DemandParameters]
+        Demand model parameters
+    state : Optional[GlobalState]
+        Current global state
+    rng : Optional[np.random.Generator]
+        Random number generator
+
+    Returns
+    -------
+    TimePointData
+        Data from this experimental period (gradient fields set to None)
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -97,10 +111,24 @@ def run_global_experiment(
         S = T * actual_q
     else:
         S = 0.0
-    
+
     U = gamma * S - p * S  # Revenue minus payments
-    
-    return GlobalExperimentData(n=n, p=p, D=D, T=T, S=S, U=U)
+
+    return TimePointData(
+        t=t,
+        p=p,
+        D=D,
+        T=T,
+        S=S,
+        U=U,
+        state=state,
+        gradient_estimate=None,  # Not used in global
+        delta_hat=None,
+        upsilon_hat=None,
+        zeta=None,
+        epsilon=None,
+        Z=None
+    )
 
 
 def run_global_learning(
@@ -116,53 +144,126 @@ def run_global_learning(
     demand_params: Optional[DemandParameters] = None,
     p_bounds: Tuple[float, float] = (0.0, float('inf')),
     rng: Optional[np.random.Generator] = None,
-) -> GlobalLearningResult:
+    rng_seed: Optional[int] = None,
+) -> Experiment:
     """
     Run global experimentation using finite-difference gradient estimates.
-    
+
     Uses Kiefer-Wolfowitz style stochastic approximation:
         p_{t+1} = p_t + η_t * (U(p_t + δ) - U(p_t - δ)) / (2δ)
-    
+
     With step sizes η_t = η/t^(2/3) and perturbation δ_t = δ/t^(1/3),
     this achieves O(T^(-1/3)) convergence - worse than local's O(T^(-1)).
-    
+
     Parameters
     ----------
     T : int
         Number of periods (uses 2 experiments per gradient estimate)
+    n : int
+        Number of suppliers
+    p_init : float
+        Initial payment
+    eta : float
+        Step size parameter
     delta : float
         Finite difference step size
+    gamma : float
+        Platform revenue per unit
+    allocation : AllocationFunction
+        The allocation function
+    supplier_params : SupplierParameters
+        Supplier behavior parameters
+    d_a : Optional[float]
+        Fixed expected demand per supplier
+    demand_params : Optional[DemandParameters]
+        Demand model (if using states)
+    p_bounds : Tuple[float, float]
+        Payment bounds
+    rng : Optional[np.random.Generator]
+        Random number generator
+    rng_seed : Optional[int]
+        Random seed
+
+    Returns
+    -------
+    Experiment
+        Complete experiment with parameters and results
     """
+    # Setup RNG
     if rng is None:
-        rng = np.random.default_rng()
-    
+        if rng_seed is not None:
+            rng = np.random.default_rng(rng_seed)
+        else:
+            rng = np.random.default_rng()
+
+    # Create experiment parameters
+    params = ExperimentParams(
+        T=T,
+        n=n,
+        p_init=p_init,
+        gamma=gamma,
+        p_bounds=p_bounds,
+        allocation=allocation,
+        supplier_params=supplier_params,
+        demand=demand_params if demand_params is not None else d_a,
+        eta=eta,
+        experiment_type="global",
+        zeta=None,
+        alpha=None,
+        delta=delta,
+        rng_seed=rng_seed,
+        store_detailed_data=False
+    )
+
     from .find_equilibrium import find_equilibrium_supply_mu
-    
+
     p = np.clip(p_init, p_bounds[0], p_bounds[1])
-    payment_history = [p]
-    utility_history = []
-    state_history = [] if demand_params else None
+    timepoints: List[TimePointData] = []
     current_d_a = d_a
-    
+
     for t in range(1, T + 1):
         # Decreasing step sizes for convergence
         eta_t = eta / (t ** (2/3))
         delta_t = delta / (t ** (1/3))
-        
+
         # Sample state for this period
         if demand_params is not None:
             state = sample_state(demand_params, rng)
             current_d_a = state.d_a
-            if state_history is not None:
-                state_history.append(state)
         else:
             state = None
-        
+
         # Two-point gradient estimate (Kiefer-Wolfowitz)
         p_plus = np.clip(p + delta_t, p_bounds[0], p_bounds[1])
         p_minus = np.clip(p - delta_t, p_bounds[0], p_bounds[1])
-        
-        # Compute utilities directly (avoid repeated equilibrium solves)
+
+        # Run experiments at p+ and p-
+        # We'll store the experiment at the current p for this timepoint
+        mu_eq = find_equilibrium_supply_mu(
+            p=p,
+            d_a=current_d_a,
+            choice=supplier_params.choice,
+            private_features=supplier_params.private_features,
+            allocation=allocation
+        )
+        q_eq = allocation(current_d_a / mu_eq) if mu_eq > 0 else 0.0
+
+        timepoint = run_global_experiment(
+            n=n,
+            p=p,
+            gamma=gamma,
+            allocation=allocation,
+            supplier_params=supplier_params,
+            t=t,
+            d_a=current_d_a,
+            demand_params=demand_params,
+            state=state,
+            rng=rng
+        )
+
+        timepoints.append(timepoint)
+
+        # Compute utilities for gradient estimate
         U_plus = _compute_realized_utility(
             n, p_plus, current_d_a, gamma, allocation, supplier_params,
             demand_params, state, rng
@@ -171,24 +272,29 @@ def run_global_learning(
             n, p_minus, current_d_a, gamma, allocation, supplier_params,
             demand_params, state, rng
         )
-        
+
         # Finite difference gradient estimate
         grad_est = (U_plus - U_minus) / (2 * delta_t)
-        
+
         # Gradient ascent step
         p = p + eta_t * grad_est
         p = np.clip(p, p_bounds[0], p_bounds[1])
-        
-        payment_history.append(p)
-        utility_history.append((U_plus + U_minus) / 2)
-    
-    return GlobalLearningResult(
+
+    # Build results
+    payments = [tp.p for tp in timepoints]
+    total_utility = sum(tp.U for tp in timepoints)
+    mean_utility = total_utility / T if T > 0 else 0.0
+
+    results = ExperimentResults(
         final_payment=p,
-        average_payment=np.mean(payment_history[1:]),
-        payment_history=payment_history,
-        utility_history=utility_history,
-        state_history=state_history
+        weighted_average_payment=None,  # Not used for global
+        average_payment=float(np.mean(payments)),
+        timepoints=timepoints,
+        total_utility=total_utility,
+        mean_utility=mean_utility
     )
+
+    return Experiment(params=params, results=results)
 
 
 def _compute_realized_utility(

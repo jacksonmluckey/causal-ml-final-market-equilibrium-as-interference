@@ -25,7 +25,7 @@ from typing import Optional, Tuple, List, Callable, Union
 
 from .allocation import AllocationFunction
 from .supplier import (
-    ChoiceFunction, 
+    ChoiceFunction,
     PrivateFeatureDistribution,
     SupplierParameters,
     sample_supplier_activations,
@@ -37,56 +37,18 @@ from .demand import (
     sample_state,
     sample_demand
 )
+from .experiment_results import (
+    TimePointData,
+    ExperimentParams,
+    ExperimentResults,
+    Experiment
+)
 
 
 # =============================================================================
 # SECTION 4.1: ESTIMATING UTILITY GRADIENTS
 # =============================================================================
-
-@dataclass
-class LocalExperimentData:
-    """
-    Data from one period of local experimentation.
-    
-    In each period, we:
-    1. Apply payment perturbations P_i = p + ζε_i
-    2. Observe supplier activations Z_i
-    3. Observe demand D and total active suppliers T
-    
-    Attributes
-    ----------
-    n : int
-        Number of potential suppliers
-    p : float
-        Base payment level
-    zeta : float
-        Perturbation magnitude
-    epsilon : np.ndarray
-        Payment perturbations ε_i ∈ {-1, +1}
-    Z : np.ndarray
-        Supplier activation decisions Z_i ∈ {0, 1}
-    D : int
-        Total demand
-    T : int
-        Number of active suppliers (sum of Z)
-    """
-    n: int
-    p: float
-    zeta: float
-    epsilon: np.ndarray  # Shape (n,), values in {-1, +1}
-    Z: np.ndarray        # Shape (n,), values in {0, 1}
-    D: int
-    T: int
-    
-    @property
-    def D_bar(self) -> float:
-        """Scaled demand D̄ = D/n"""
-        return self.D / self.n
-    
-    @property
-    def Z_bar(self) -> float:
-        """Scaled active supply Z̄ = T/n"""
-        return self.T / self.n
+# Note: LocalExperimentData has been replaced by TimePointData from experiment_results.py
 
 
 def generate_payment_perturbations(
@@ -122,21 +84,26 @@ def run_local_experiment(
     zeta: float,
     expected_allocation: float,
     supplier_params: SupplierParameters,
+    gamma: float,
+    allocation: AllocationFunction,
+    t: int = 0,
     D: Optional[int] = None,
     d_a: Optional[float] = None,
     demand_params: Optional[DemandParameters] = None,
     state: Optional[GlobalState] = None,
+    store_detailed_data: bool = False,
     rng: Optional[np.random.Generator] = None
-) -> LocalExperimentData:
+) -> TimePointData:
     """
     Run one period of local experimentation.
-    
+
     This implements the data collection step of Section 4.1:
     1. Generate ε_i ∼ {±1} uniformly for each supplier
     2. Set payments P_i = p + ζε_i
     3. Suppliers decide to become active based on expected revenue
     4. Observe Z_i, D, T
-    
+    5. Compute S (demand served) and U (utility)
+
     Parameters
     ----------
     n : int
@@ -149,6 +116,12 @@ def run_local_experiment(
         Expected allocation q per active supplier at equilibrium
     supplier_params : SupplierParameters
         Supplier choice parameters
+    gamma : float
+        Platform revenue per unit served
+    allocation : AllocationFunction
+        The allocation function ω
+    t : int
+        Time period (1-indexed)
     D : Optional[int]
         Realized demand (if already sampled externally)
     d_a : Optional[float]
@@ -157,14 +130,17 @@ def run_local_experiment(
         Demand model parameters (used to sample D if not provided directly)
     state : Optional[GlobalState]
         Current global state (used with demand_params to sample D)
+    store_detailed_data : bool
+        Whether to store individual-level arrays (Z, epsilon)
     rng : Optional[np.random.Generator]
         Random number generator
-        
+
     Returns
     -------
-    LocalExperimentData
-        Data from this experimental period
-        
+    TimePointData
+        Data from this experimental period (gradient estimates set to None,
+        to be filled in by calling code)
+
     Notes
     -----
     Demand D is determined by (in order of priority):
@@ -207,166 +183,186 @@ def run_local_experiment(
         raise ValueError("Must provide D, (demand_params + state), or d_a")
     
     T = int(Z.sum())
-    
-    return LocalExperimentData(
-        n=n,
+
+    # Step 5: Compute demand served and utility
+    if T > 0:
+        actual_q = allocation(D / T)
+        S = T * actual_q
+    else:
+        S = 0.0
+
+    U = gamma * S - p * S  # Revenue minus cost
+
+    return TimePointData(
+        t=t,
         p=p,
-        zeta=zeta,
-        epsilon=epsilon,
-        Z=Z,
         D=D,
-        T=T
+        T=T,
+        S=S,
+        U=U,
+        state=state,
+        gradient_estimate=None,  # To be filled in by caller
+        delta_hat=None,
+        upsilon_hat=None,
+        zeta=zeta,
+        epsilon=epsilon if store_detailed_data else None,
+        Z=Z if store_detailed_data else None
     )
 
 
-def estimate_delta_hat(data: LocalExperimentData) -> float:
+def estimate_delta_hat(data: TimePointData, n: int) -> float:
     """
     Estimate the marginal response function Δ̂ from local experiment data.
-    
+
     From equation (4.1):
         Δ̂ = ζ⁻¹ * Cov(Z_i, ε_i) / Var(ε_i)
-        
+
     This is the scaled regression coefficient of Z_i on ε_i.
-    
+
     Since Var(ε_i) = 1 (ε_i ∈ {±1} uniformly), this simplifies to:
         Δ̂ = ζ⁻¹ * Cov(Z_i, ε_i)
-    
+
     Parameters
     ----------
-    data : LocalExperimentData
-        Data from local experiment
-        
+    data : TimePointData
+        Data from local experiment (must have Z and epsilon arrays)
+    n : int
+        Number of suppliers
+
     Returns
     -------
     float
         Estimated marginal response Δ̂
     """
+    if data.Z is None or data.epsilon is None:
+        raise ValueError("Cannot estimate delta_hat without detailed data (Z, epsilon)")
+
     # Compute sample covariance
     Z_centered = data.Z - np.mean(data.Z)
     epsilon_centered = data.epsilon - np.mean(data.epsilon)
-    
+
     # Cov(Z, ε) = (1/n) * Σ(Z_i - Z̄)(ε_i - ε̄)
     cov_Z_epsilon = np.mean(Z_centered * epsilon_centered)
-    
+
     # Var(ε) = (1/n) * Σ(ε_i - ε̄)²
     var_epsilon = np.mean(epsilon_centered ** 2)
-    
+
     # Δ̂ = ζ⁻¹ * Cov(Z, ε) / Var(ε)
     if var_epsilon < 1e-10:
         return 0.0
-    
+
     delta_hat = cov_Z_epsilon / (data.zeta * var_epsilon)
-    
+
     return delta_hat
 
 
 def estimate_upsilon_hat(
     delta_hat: float,
-    D_bar: float,
-    Z_bar: float,
-    p: float,
+    data: TimePointData,
+    n: int,
     allocation: AllocationFunction
 ) -> float:
     """
     Estimate the supply gradient Υ̂ ≈ μ'(p).
-    
+
     From equation (4.2):
         Υ̂ = Δ̂ / (1 + p·D̄·Δ̂·ω'(D̄/Z̄) / (Z̄²·ω(D̄/Z̄)))
-    
+
     This transforms the marginal response Δ̂ into an estimate of μ'(p)
     by accounting for the interference attenuation factor.
-    
+
     Parameters
     ----------
     delta_hat : float
         Estimated marginal response from estimate_delta_hat
-    D_bar : float
-        Scaled demand D̄ = D/n
-    Z_bar : float
-        Scaled active supply Z̄ = T/n
-    p : float
-        Payment level
+    data : TimePointData
+        Data from local experiment
+    n : int
+        Number of suppliers
     allocation : AllocationFunction
         The allocation function ω
-        
+
     Returns
     -------
     float
         Estimated supply gradient Υ̂ ≈ dμ/dp
     """
+    D_bar = data.D / n
+    Z_bar = data.T / n
+
     if Z_bar < 1e-10:
         return delta_hat
-    
+
     x = D_bar / Z_bar  # Demand per active supplier
     omega = allocation(x)
     omega_prime = allocation.derivative(x)
-    
+
     if abs(omega) < 1e-10:
         return delta_hat
-    
+
     # Interference term from denominator of (4.2)
-    interference_term = (p * D_bar * delta_hat * omega_prime) / (Z_bar**2 * omega)
-    
+    interference_term = (data.p * D_bar * delta_hat * omega_prime) / (Z_bar**2 * omega)
+
     upsilon_hat = delta_hat / (1.0 + interference_term)
-    
+
     return upsilon_hat
 
 
 def estimate_gamma_hat(
     upsilon_hat: float,
-    D_bar: float,
-    Z_bar: float,
-    p: float,
+    data: TimePointData,
+    n: int,
     allocation: AllocationFunction,
     revenue_fn: Callable[[float], float],
     revenue_fn_prime: Callable[[float], float]
 ) -> float:
     """
     Estimate the utility gradient Γ̂ ≈ du(p)/dp.
-    
+
     From equation (4.3):
         Γ̂ = Υ̂ · [r(D̄/Z̄) - p·ω(D̄/Z̄) - (r'(D̄/Z̄) - p·ω'(D̄/Z̄))·D̄/Z̄] - ω(D̄/Z̄)·Z̄
-    
+
     This is the complete gradient estimator from Theorem 6.
-    
+
     Parameters
     ----------
     upsilon_hat : float
         Estimated supply gradient from estimate_upsilon_hat
-    D_bar : float
-        Scaled demand D̄ = D/n
-    Z_bar : float
-        Scaled active supply Z̄ = T/n
-    p : float
-        Payment level
+    data : TimePointData
+        Data from local experiment
+    n : int
+        Number of suppliers
     allocation : AllocationFunction
         The allocation function ω
     revenue_fn : Callable[[float], float]
         Platform revenue function r(x)
     revenue_fn_prime : Callable[[float], float]
         Derivative r'(x)
-        
+
     Returns
     -------
     float
         Estimated utility gradient Γ̂ ≈ du/dp
     """
+    D_bar = data.D / n
+    Z_bar = data.T / n
+
     if Z_bar < 1e-10:
         return 0.0
-    
+
     x = D_bar / Z_bar
-    
+
     r_x = revenue_fn(x)
     r_prime_x = revenue_fn_prime(x)
     omega_x = allocation(x)
     omega_prime_x = allocation.derivative(x)
-    
+
     # Bracket term in (4.3)
-    bracket = r_x - p * omega_x - (r_prime_x - p * omega_prime_x) * x
-    
+    bracket = r_x - data.p * omega_x - (r_prime_x - data.p * omega_prime_x) * x
+
     # Full gradient estimate
     gamma_hat = upsilon_hat * bracket - omega_x * Z_bar
-    
+
     return gamma_hat
 
 
@@ -396,68 +392,72 @@ class GradientEstimate:
 
 
 def estimate_utility_gradient(
-    data: LocalExperimentData,
+    data: TimePointData,
+    n: int,
     allocation: AllocationFunction,
     gamma: float
 ) -> GradientEstimate:
     """
     Complete gradient estimation from local experiment data.
-    
+
     This implements the full estimation procedure from Section 4.1
     (Theorem 6), combining equations (4.1), (4.2), and (4.3).
-    
+
     For linear revenue r(x) = γ·ω(x), we have r'(x) = γ·ω'(x).
-    
+
     Parameters
     ----------
-    data : LocalExperimentData
+    data : TimePointData
         Data from one period of local experimentation
+    n : int
+        Number of suppliers
     allocation : AllocationFunction
         The allocation function ω
     gamma : float
         Platform revenue per unit of demand served
-        
+
     Returns
     -------
     GradientEstimate
         Complete gradient estimates
     """
     # Step 1: Estimate Δ̂ (equation 4.1)
-    delta_hat = estimate_delta_hat(data)
-    
+    delta_hat = estimate_delta_hat(data, n)
+
     # Step 2: Estimate Υ̂ (equation 4.2)
     upsilon_hat = estimate_upsilon_hat(
         delta_hat=delta_hat,
-        D_bar=data.D_bar,
-        Z_bar=data.Z_bar,
-        p=data.p,
+        data=data,
+        n=n,
         allocation=allocation
     )
-    
+
     # Step 3: Estimate Γ̂ (equation 4.3)
     # For linear revenue: r(x) = γ·ω(x), r'(x) = γ·ω'(x)
     def revenue_fn(x: float) -> float:
         return gamma * allocation(x)
-    
+
     def revenue_fn_prime(x: float) -> float:
         return gamma * allocation.derivative(x)
-    
+
     gamma_hat = estimate_gamma_hat(
         upsilon_hat=upsilon_hat,
-        D_bar=data.D_bar,
-        Z_bar=data.Z_bar,
-        p=data.p,
+        data=data,
+        n=n,
         allocation=allocation,
         revenue_fn=revenue_fn,
         revenue_fn_prime=revenue_fn_prime
     )
-    
+
+    D_bar = data.D / n
+    Z_bar = data.T / n
+
     return GradientEstimate(
         delta_hat=delta_hat,
         upsilon_hat=upsilon_hat,
         gamma_hat=gamma_hat,
-        D_bar=data.D_bar,
-        Z_bar=data.Z_bar
+        D_bar=D_bar,
+        Z_bar=Z_bar
     )
 
 
@@ -586,34 +586,6 @@ def mirror_descent_update(
     )
 
 
-@dataclass
-class LearningResult:
-    """
-    Results from running the learning algorithm.
-    
-    Attributes
-    ----------
-    final_payment : float
-        Final payment level after T periods
-    weighted_average_payment : float
-        Weighted average p̄_T = (2/(T(T+1))) Σ_{t=1}^T t·p_t (Corollary 8)
-    payment_history : List[float]
-        Sequence of payments p_1, ..., p_T
-    gradient_history : List[float]
-        Sequence of gradient estimates Γ̂_1, ..., Γ̂_T
-    utility_history : List[float]
-        Estimated utilities (if tracked)
-    state_history : Optional[List[GlobalState]]
-        Sequence of global states A_1, ..., A_T (if using DemandParameters)
-    """
-    final_payment: float
-    weighted_average_payment: float
-    payment_history: List[float]
-    gradient_history: List[float]
-    utility_history: List[float]
-    state_history: Optional[List[GlobalState]] = None
-
-
 def run_learning_algorithm(
     T: int,
     n: int,
@@ -626,20 +598,23 @@ def run_learning_algorithm(
     d_a: Optional[float] = None,
     demand_params: Optional[DemandParameters] = None,
     p_bounds: Tuple[float, float] = (0.0, float('inf')),
+    alpha: float = 0.3,
+    store_detailed_data: bool = False,
     rng: Optional[np.random.Generator] = None,
+    rng_seed: Optional[int] = None,
     verbose: bool = False
-) -> LearningResult:
+) -> Experiment:
     """
     Run the complete learning algorithm from Section 4.2.
-    
+
     This implements the first-order optimization algorithm:
-    
+
     For t = 1, ..., T:
         1. Sample global state A_t (if using demand_params)
         2. Deploy payment perturbations around p_t
         3. Estimate gradient Γ̂_t via local experimentation
         4. Update p_{t+1} via mirror descent (equation 4.5)
-    
+
     Parameters
     ----------
     T : int
@@ -665,48 +640,75 @@ def run_learning_algorithm(
         If provided, state is sampled each period per the paper
     p_bounds : Tuple[float, float]
         Payment bounds [c_-, c_+]
+    alpha : float
+        Zeta decay exponent (stored in params, not actively used here)
+    store_detailed_data : bool
+        Whether to store individual-level data (Z_i, ε_i arrays)
     rng : Optional[np.random.Generator]
         Random number generator for reproducibility
+    rng_seed : Optional[int]
+        Random seed (if rng not provided)
     verbose : bool
         Whether to print progress
-        
+
     Returns
     -------
-    LearningResult
-        Learning outcomes including payment and state trajectories
-        
+    Experiment
+        Complete experiment including parameters, timepoint data, and results
+
     Notes
     -----
     Either d_a or demand_params must be provided. If demand_params is given,
     the global state A_t is sampled each period according to the paper's model.
     """
+    # Setup RNG
     if rng is None:
-        rng = np.random.default_rng()
-    
+        if rng_seed is not None:
+            rng = np.random.default_rng(rng_seed)
+        else:
+            rng = np.random.default_rng()
+
     if d_a is None and demand_params is None:
         raise ValueError("Must provide either d_a or demand_params")
-    
+
+    # Create experiment parameters
+    params = ExperimentParams(
+        T=T,
+        n=n,
+        p_init=p_init,
+        gamma=gamma,
+        p_bounds=p_bounds,
+        allocation=allocation,
+        supplier_params=supplier_params,
+        demand=demand_params if demand_params is not None else d_a,
+        eta=eta,
+        experiment_type="local",
+        zeta=zeta,
+        alpha=alpha,
+        delta=None,
+        rng_seed=rng_seed,
+        store_detailed_data=store_detailed_data
+    )
+
     # Initialize optimizer
     opt_state = initialize_optimizer(p_init, p_bounds)
-    utility_history = []
-    state_history = [] if demand_params is not None else None
-    
+    timepoints: List[TimePointData] = []
+
     # Import here to avoid circular imports
     from .find_equilibrium import find_equilibrium_supply_mu
-    
+
     for t in range(1, T + 1):
         if verbose and t % 20 == 0:
             print(f"  Period {t}/{T}: p = {opt_state.p:.4f}")
-        
+
         # Sample global state A_t for this period
         if demand_params is not None:
             current_state = sample_state(demand_params, rng)
             current_d_a = current_state.d_a
-            state_history.append(current_state)
         else:
             current_state = None
             current_d_a = d_a
-        
+
         # Compute expected allocation at current payment for this state
         mu_eq = find_equilibrium_supply_mu(
             p=opt_state.p,
@@ -716,28 +718,34 @@ def run_learning_algorithm(
             allocation=allocation
         )
         q_eq = allocation(current_d_a / mu_eq) if mu_eq > 0 else 0.0
-        
+
         # Run local experiment for this period
-        data = run_local_experiment(
+        timepoint = run_local_experiment(
             n=n,
             p=opt_state.p,
             zeta=zeta,
             expected_allocation=q_eq,
             supplier_params=supplier_params,
+            gamma=gamma,
+            allocation=allocation,
+            t=t,
             d_a=current_d_a,
             demand_params=demand_params,
             state=current_state,
+            store_detailed_data=store_detailed_data,
             rng=rng
         )
-        
-        # Estimate gradient
-        grad_est = estimate_utility_gradient(data, allocation, gamma)
-        
-        # Track estimated utility
-        x = data.D_bar / data.Z_bar if data.Z_bar > 0 else 0
-        est_utility = (gamma - opt_state.p) * allocation(x) * data.Z_bar if data.Z_bar > 0 else 0
-        utility_history.append(est_utility)
-        
+
+        # Estimate gradients
+        grad_est = estimate_utility_gradient(timepoint, n, allocation, gamma)
+
+        # Update timepoint with gradient estimates
+        timepoint.gradient_estimate = grad_est.gamma_hat
+        timepoint.delta_hat = grad_est.delta_hat
+        timepoint.upsilon_hat = grad_est.upsilon_hat
+
+        timepoints.append(timepoint)
+
         # Update payment via mirror descent
         opt_state = mirror_descent_update(
             state=opt_state,
@@ -745,20 +753,27 @@ def run_learning_algorithm(
             eta=eta,
             p_bounds=p_bounds
         )
-    
+
     # Compute weighted average (Corollary 8)
+    payments = [tp.p for tp in timepoints]
     weights = np.arange(1, T + 1)
     weight_sum = T * (T + 1) / 2
-    weighted_avg = np.sum(weights * np.array(opt_state.payment_history[:-1])) / weight_sum
-    
-    return LearningResult(
+    weighted_avg = float(np.sum(weights * np.array(payments)) / weight_sum)
+
+    # Build results
+    total_utility = sum(tp.U for tp in timepoints)
+    mean_utility = total_utility / T if T > 0 else 0.0
+
+    results = ExperimentResults(
         final_payment=opt_state.p,
         weighted_average_payment=weighted_avg,
-        payment_history=opt_state.payment_history,
-        gradient_history=opt_state.gradient_history,
-        utility_history=utility_history,
-        state_history=state_history
+        average_payment=float(np.mean(payments)),
+        timepoints=timepoints,
+        total_utility=total_utility,
+        mean_utility=mean_utility
     )
+
+    return Experiment(params=params, results=results)
 
 
 # =============================================================================
