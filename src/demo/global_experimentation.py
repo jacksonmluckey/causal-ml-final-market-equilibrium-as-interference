@@ -3,13 +3,13 @@ Global Experimentation (Bandit Baseline)
 
 Section 4.4 of Wager & Xu (2021): Comparison with global experimentation.
 
-In global experimentation, each period t we choose a SINGLE payment p_t
-for all suppliers and observe aggregate utility U_t. This is a standard
+In global experimentation, each period t we choose a SINGLE payment $p_t$
+for all suppliers and observe aggregate utility $U_t$. This is a standard
 continuous-armed bandit problem.
 
 Key result (Shamir 2013): Even with strongly concave utility, no algorithm
-can achieve expected regret growing slower than √T. This gives 1/√T rate
-of decay in errors, compared to 1/T for local experimentation.
+can achieve expected regret growing slower than $\sqrt{T}$. This gives $1/\sqrt{T}$ rate
+of decay in errors, compared to $1/T$ for local experimentation.
 """
 
 import numpy as np
@@ -180,10 +180,10 @@ def run_global_learning(
     Run global experimentation using finite-difference gradient estimates.
 
     Uses Kiefer-Wolfowitz style stochastic approximation:
-        p_{t+1} = p_t + η_t * (U(p_t + δ) - U(p_t - δ)) / (2δ)
+        $p_{t+1} = p_t + \eta_t \cdot (U(p_t + \delta) - U(p_t - \delta)) / (2\delta)$
 
-    With step sizes η_t = η/t^(2/3) and perturbation δ_t = δ/t^(1/3),
-    this achieves O(T^(-1/3)) convergence - worse than local's O(T^(-1)).
+    With step sizes $\eta_t = \eta/t^{2/3}$ and perturbation $\delta_t = \delta/t^{1/3}$,
+    this achieves $O(T^{-1/3})$ convergence - worse than local's $O(T^{-1})$.
 
     Parameters
     ----------

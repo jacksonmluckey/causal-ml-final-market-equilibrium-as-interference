@@ -4,9 +4,9 @@ Revenue Functions for Stochastic Market
 This module implements the platform's revenue function.
 
 Key equations:
-- Revenue (3.9): R(d, t) = r(d/t) * t
+- Revenue (3.9): $R(d, t) = r(d/t) \cdot t$
 
-where r(x) is revenue per active supplier when demand ratio is x = d/t.
+where $r(x)$ is revenue per active supplier when demand ratio is $x = d/t$.
 """
 
 import numpy as np
@@ -25,16 +25,16 @@ class RevenueFunction:
     """
     Platform revenue function.
 
-    R(d, t) = r(d/t) * t
+    $R(d, t) = r(d/t) \cdot t$
 
-    where r(x) is revenue per active supplier when demand ratio is x.
+    where $r(x)$ is revenue per active supplier when demand ratio is x.
 
     Parameters
     ----------
     r : Callable[[float], float]
-        Revenue per supplier when demand ratio is x = d/t
+        Revenue per supplier when demand ratio is $x = d/t$
     r_prime : Optional[Callable[[float], float]]
-        Derivative dr/dx. If None, computed numerically when needed.
+        Derivative $dr/dx$. If None, computed numerically when needed.
     name : str
         Descriptive name
     """
@@ -47,18 +47,18 @@ def create_linear_revenue(gamma: float, allocation: AllocationFunction) -> Reven
     """
     Create linear revenue function.
 
-    Linear revenue: platform gets γ per unit of demand served.
+    Linear revenue: platform gets $\gamma$ per unit of demand served.
 
-    R(D, T) = γ * T * Ω(D, T) = γ * T * ω(D/T)
+    $R(D, T) = \gamma \cdot T \cdot \Omega(D, T) = \gamma \cdot T \cdot \omega(D/T)$
 
-    So r(x) = γ * ω(x)
+    So $r(x) = \gamma \cdot \omega(x)$
 
     Parameters
     ----------
     gamma : float
         Payment per unit of demand served
     allocation : AllocationFunction
-        Allocation function ω(x)
+        Allocation function $\omega(x)$
 
     Returns
     -------
@@ -66,15 +66,15 @@ def create_linear_revenue(gamma: float, allocation: AllocationFunction) -> Reven
         The linear revenue function
     """
     def r(x: float) -> float:
-        """r(x) = γ * ω(x)"""
+        """$r(x) = \gamma \cdot \omega(x)$"""
         return gamma * allocation(x)
 
     def r_prime(x: float) -> float:
-        """dr/dx = γ * ω'(x)"""
+        """$dr/dx = \gamma \cdot \omega'(x)$"""
         return gamma * allocation.derivative(x)
 
     return RevenueFunction(
         r=r,
         r_prime=r_prime,
-        name=f"Linear (γ={gamma})"
+        name=f"Linear ($\\gamma$={gamma})"
     )

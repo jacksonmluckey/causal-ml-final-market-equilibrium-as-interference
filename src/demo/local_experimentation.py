@@ -56,22 +56,22 @@ def generate_payment_perturbations(
     rng: Optional[np.random.Generator] = None
 ) -> np.ndarray:
     """
-    Generate symmetric payment perturbations ε_i ∈ {-1, +1}.
-    
+    Generate symmetric payment perturbations $\varepsilon_i \in \{-1, +1\}$.
+
     From equation (2.1)/(3.11):
-        P_i = p + ζε_i, where ε_i ∼ {±1} uniformly
-    
+        $P_i = p + \zeta \varepsilon_i$, where $\varepsilon_i \sim \{±1\}$ uniformly
+
     Parameters
     ----------
     n : int
         Number of suppliers
     rng : Optional[np.random.Generator]
         Random number generator
-        
+
     Returns
     -------
     np.ndarray
-        Array of ε_i values, each ±1
+        Array of $\varepsilon_i$ values, each $\pm 1$
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -98,10 +98,10 @@ def run_local_experiment(
     Run one period of local experimentation.
 
     This implements the data collection step of Section 4.1:
-    1. Generate ε_i ∼ {±1} uniformly for each supplier
-    2. Set payments P_i = p + ζε_i
+    1. Generate $\varepsilon_i \sim \{±1\}$ uniformly for each supplier
+    2. Set payments $P_i = p + \zeta \varepsilon_i$
     3. Suppliers decide to become active based on expected revenue
-    4. Observe Z_i, D, T
+    4. Observe $Z_i$, D, T
     5. Compute S (demand served) and U (utility)
 
     Parameters
@@ -111,7 +111,7 @@ def run_local_experiment(
     p : float
         Base payment level
     zeta : float
-        Perturbation magnitude (should scale as n^(-α) for 0 < α < 0.5)
+        Perturbation magnitude (should scale as $n^{-\alpha}$ for $0 < \alpha < 0.5$)
     expected_allocation : float
         Expected allocation q per active supplier at equilibrium
     supplier_params : SupplierParameters
@@ -151,7 +151,7 @@ def run_local_experiment(
     if rng is None:
         rng = np.random.default_rng()
     
-    # Step 1: Generate perturbations ε_i ∈ {-1, +1}
+    # Step 1: Generate perturbations $\varepsilon_i \in \{-1, +1\}$
     epsilon = rng.choice([-1, 1], size=n)
     
     # Step 2: Set payments
@@ -212,15 +212,15 @@ def run_local_experiment(
 
 def estimate_delta_hat(data: TimePointData, n: int) -> float:
     """
-    Estimate the marginal response function Δ̂ from local experiment data.
+    Estimate the marginal response function $\hat{\Delta}$ from local experiment data.
 
     From equation (4.1):
-        Δ̂ = ζ⁻¹ * Cov(Z_i, ε_i) / Var(ε_i)
+        $\hat{\Delta} = \zeta^{-1} \cdot \text{Cov}(Z_i, \varepsilon_i) / \text{Var}(\varepsilon_i)$
 
-    This is the scaled regression coefficient of Z_i on ε_i.
+    This is the scaled regression coefficient of $Z_i$ on $\varepsilon_i$.
 
-    Since Var(ε_i) = 1 (ε_i ∈ {±1} uniformly), this simplifies to:
-        Δ̂ = ζ⁻¹ * Cov(Z_i, ε_i)
+    Since $\text{Var}(\varepsilon_i) = 1$ ($\varepsilon_i \in \{±1\}$ uniformly), this simplifies to:
+        $\hat{\Delta} = \zeta^{-1} \cdot \text{Cov}(Z_i, \varepsilon_i)$
 
     Parameters
     ----------
@@ -232,7 +232,7 @@ def estimate_delta_hat(data: TimePointData, n: int) -> float:
     Returns
     -------
     float
-        Estimated marginal response Δ̂
+        Estimated marginal response $\hat{\Delta}$
     """
     if data.Z is None or data.epsilon is None:
         raise ValueError("Cannot estimate delta_hat without detailed data (Z, epsilon)")
@@ -241,13 +241,13 @@ def estimate_delta_hat(data: TimePointData, n: int) -> float:
     Z_centered = data.Z - np.mean(data.Z)
     epsilon_centered = data.epsilon - np.mean(data.epsilon)
 
-    # Cov(Z, ε) = (1/n) * Σ(Z_i - Z̄)(ε_i - ε̄)
+    # $\text{Cov}(Z, \varepsilon) = (1/n) \cdot \sum(Z_i - \bar{Z})(\varepsilon_i - \bar{\varepsilon})$
     cov_Z_epsilon = np.mean(Z_centered * epsilon_centered)
 
-    # Var(ε) = (1/n) * Σ(ε_i - ε̄)²
+    # $\text{Var}(\varepsilon) = (1/n) \cdot \sum(\varepsilon_i - \bar{\varepsilon})^2$
     var_epsilon = np.mean(epsilon_centered ** 2)
 
-    # Δ̂ = ζ⁻¹ * Cov(Z, ε) / Var(ε)
+    # $\hat{\Delta} = \zeta^{-1} \cdot \text{Cov}(Z, \varepsilon) / \text{Var}(\varepsilon)$
     if var_epsilon < 1e-10:
         return 0.0
 
@@ -263,12 +263,12 @@ def estimate_upsilon_hat(
     allocation: AllocationFunction
 ) -> float:
     """
-    Estimate the supply gradient Υ̂ ≈ μ'(p).
+    Estimate the supply gradient $\hat{\Upsilon} \approx \mu'(p)$.
 
     From equation (4.2):
-        Υ̂ = Δ̂ / (1 + p·D̄·Δ̂·ω'(D̄/Z̄) / (Z̄²·ω(D̄/Z̄)))
+        $\hat{\Upsilon} = \hat{\Delta} / (1 + p \cdot \bar{D} \cdot \hat{\Delta} \cdot \omega'(\bar{D}/\bar{Z}) / (\bar{Z}^2 \cdot \omega(\bar{D}/\bar{Z})))$
 
-    This transforms the marginal response Δ̂ into an estimate of μ'(p)
+    This transforms the marginal response $\hat{\Delta}$ into an estimate of $\mu'(p)$
     by accounting for the interference attenuation factor.
 
     Parameters
@@ -280,12 +280,12 @@ def estimate_upsilon_hat(
     n : int
         Number of suppliers
     allocation : AllocationFunction
-        The allocation function ω
+        The allocation function $\omega$
 
     Returns
     -------
     float
-        Estimated supply gradient Υ̂ ≈ dμ/dp
+        Estimated supply gradient $\hat{\Upsilon} \approx d\mu/dp$
     """
     D_bar = data.D / n
     Z_bar = data.T / n
@@ -317,10 +317,10 @@ def estimate_gamma_hat(
     revenue_fn_prime: Callable[[float], float]
 ) -> float:
     """
-    Estimate the utility gradient Γ̂ ≈ du(p)/dp.
+    Estimate the utility gradient $\hat{\Gamma} \approx du(p)/dp$.
 
     From equation (4.3):
-        Γ̂ = Υ̂ · [r(D̄/Z̄) - p·ω(D̄/Z̄) - (r'(D̄/Z̄) - p·ω'(D̄/Z̄))·D̄/Z̄] - ω(D̄/Z̄)·Z̄
+        $\hat{\Gamma} = \hat{\Upsilon} \cdot [r(\bar{D}/\bar{Z}) - p \cdot \omega(\bar{D}/\bar{Z}) - (r'(\bar{D}/\bar{Z}) - p \cdot \omega'(\bar{D}/\bar{Z})) \cdot \bar{D}/\bar{Z}] - \omega(\bar{D}/\bar{Z}) \cdot \bar{Z}$
 
     This is the complete gradient estimator from Theorem 6.
 
@@ -333,16 +333,16 @@ def estimate_gamma_hat(
     n : int
         Number of suppliers
     allocation : AllocationFunction
-        The allocation function ω
+        The allocation function $\omega$
     revenue_fn : Callable[[float], float]
-        Platform revenue function r(x)
+        Platform revenue function $r(x)$
     revenue_fn_prime : Callable[[float], float]
-        Derivative r'(x)
+        Derivative $r'(x)$
 
     Returns
     -------
     float
-        Estimated utility gradient Γ̂ ≈ du/dp
+        Estimated utility gradient $\hat{\Gamma} \approx du/dp$
     """
     D_bar = data.D / n
     Z_bar = data.T / n
@@ -370,15 +370,15 @@ def estimate_gamma_hat(
 class GradientEstimate:
     """
     Complete gradient estimate from one period of local experimentation.
-    
+
     Attributes
     ----------
     delta_hat : float
-        Estimated marginal response Δ̂ (equation 4.1)
+        Estimated marginal response $\hat{\Delta}$ (equation 4.1)
     upsilon_hat : float
-        Estimated supply gradient Υ̂ ≈ μ' (equation 4.2)
+        Estimated supply gradient $\hat{\Upsilon} \approx \mu'$ (equation 4.2)
     gamma_hat : float
-        Estimated utility gradient Γ̂ ≈ du/dp (equation 4.3)
+        Estimated utility gradient $\hat{\Gamma} \approx du/dp$ (equation 4.3)
     D_bar : float
         Observed scaled demand
     Z_bar : float
@@ -403,7 +403,7 @@ def estimate_utility_gradient(
     This implements the full estimation procedure from Section 4.1
     (Theorem 6), combining equations (4.1), (4.2), and (4.3).
 
-    For linear revenue r(x) = γ·ω(x), we have r'(x) = γ·ω'(x).
+    For linear revenue $r(x) = \gamma \cdot \omega(x)$, we have $r'(x) = \gamma \cdot \omega'(x)$.
 
     Parameters
     ----------
@@ -421,10 +421,10 @@ def estimate_utility_gradient(
     GradientEstimate
         Complete gradient estimates
     """
-    # Step 1: Estimate Δ̂ (equation 4.1)
+    # Step 1: Estimate $\hat{\Delta}$ (equation 4.1)
     delta_hat = estimate_delta_hat(data, n)
 
-    # Step 2: Estimate Υ̂ (equation 4.2)
+    # Step 2: Estimate $\hat{\Upsilon}$ (equation 4.2)
     upsilon_hat = estimate_upsilon_hat(
         delta_hat=delta_hat,
         data=data,
@@ -432,8 +432,8 @@ def estimate_utility_gradient(
         allocation=allocation
     )
 
-    # Step 3: Estimate Γ̂ (equation 4.3)
-    # For linear revenue: r(x) = γ·ω(x), r'(x) = γ·ω'(x)
+    # Step 3: Estimate $\hat{\Gamma}$ (equation 4.3)
+    # For linear revenue: $r(x) = \gamma \cdot \omega(x)$, $r'(x) = \gamma \cdot \omega'(x)$
     def revenue_fn(x: float) -> float:
         return gamma * allocation(x)
 
@@ -479,9 +479,9 @@ class OptimizationState:
     theta : float
         Accumulated weighted gradient sum
     gradient_history : List[float]
-        History of gradient estimates Γ̂_t
+        History of gradient estimates $\hat{\Gamma}_t$
     payment_history : List[float]
-        History of payment levels p_t
+        History of payment levels $p_t$
     """
     t: int
     p: float
@@ -530,11 +530,11 @@ def mirror_descent_update(
     Perform one step of the mirror descent update.
 
     From equation (4.5):
-        p_{t+1} = argmin_p { (1/2η) Σ_{s=1}^t s(p - p_s)² - θ_t·p : p ∈ I }
-        where θ_t = Σ_{s=1}^t s·Γ̂_s
+        $p_{t+1} = \arg\min_p \{ (1/2\eta) \sum_{s=1}^t s(p - p_s)^2 - \theta_t \cdot p : p \in I \}$
+        where $\theta_t = \sum_{s=1}^t s \cdot \hat{\Gamma}_s$
 
-    For the unconstrained case (I = ℝ), this reduces to:
-        p_{t+1} = p_t + (2η·Γ̂_t) / (t+1)
+    For the unconstrained case ($I = \mathbb{R}$), this reduces to:
+        $p_{t+1} = p_t + (2\eta \cdot \hat{\Gamma}_t) / (t+1)$
 
     For the constrained case, we project onto the interval.
 
@@ -543,9 +543,9 @@ def mirror_descent_update(
     state : OptimizationState
         Current optimization state
     gradient : float
-        Gradient estimate Γ̂_t from current period
+        Gradient estimate $\hat{\Gamma}_t$ from current period
     eta : float
-        Step size η (should satisfy η > σ⁻¹ where σ is strong concavity)
+        Step size $\eta$ (should satisfy $\eta > \sigma^{-1}$ where $\sigma$ is strong concavity)
     p_bounds : Tuple[float, float]
         Payment bounds [c_-, c_+]
 
@@ -558,23 +558,23 @@ def mirror_descent_update(
 
     t = state.t
     c_minus, c_plus = p_bounds
-    
-    # Update θ_t = Σ_{s=1}^t s·Γ̂_s
+
+    # Update $\theta_t = \sum_{s=1}^t s \cdot \hat{\Gamma}_s$
     theta_new = state.theta + t * gradient
-    
+
     # For the mirror descent update with quadratic regularizer,
     # the solution to the optimization problem in (4.5) is:
-    # 
+    #
     # Without constraint: weighted average of past payments plus gradient term
-    # p_{t+1} = (Σ_{s=1}^t s·p_s + η·θ_t) / (Σ_{s=1}^t s)
-    #         = (Σ_{s=1}^t s·p_s) / (t(t+1)/2) + η·θ_t / (t(t+1)/2)
+    # $p_{t+1} = (\sum_{s=1}^t s \cdot p_s + \eta \cdot \theta_t) / (\sum_{s=1}^t s)$
+    #         = $(\sum_{s=1}^t s \cdot p_s) / (t(t+1)/2) + \eta \cdot \theta_t / (t(t+1)/2)$
     #
     # Simplified form (equivalent to basic gradient descent):
-    # p_{t+1} = p_t + 2η·Γ̂_t / (t+1)
-    
+    # $p_{t+1} = p_t + 2\eta \cdot \hat{\Gamma}_t / (t+1)$
+
     p_new = state.p + (2 * eta * gradient) / (t + 1)
 
-    # Project onto interval I = [c_-, c_+]
+    # Project onto interval $I = [c_-, c_+]$
     p_new = np.clip(p_new, c_minus, c_plus)
     
     # Update histories
@@ -648,10 +648,10 @@ def run_learning_algorithm(
     This implements the first-order optimization algorithm:
 
     For t = 1, ..., T:
-        1. Sample global state A_t (if using demand_params)
-        2. Deploy payment perturbations around p_t
-        3. Estimate gradient Γ̂_t via local experimentation
-        4. Update p_{t+1} via mirror descent (equation 4.5)
+        1. Sample global state $A_t$ (if using demand_params)
+        2. Deploy payment perturbations around $p_t$
+        3. Estimate gradient $\hat{\Gamma}_t$ via local experimentation
+        4. Update $p_{t+1}$ via mirror descent (equation 4.5)
 
     Parameters
     ----------
@@ -662,9 +662,9 @@ def run_learning_algorithm(
     p_init : float
         Initial payment p_1
     eta : float
-        Step size η (should satisfy η > σ⁻¹)
+        Step size $\eta$ (should satisfy $\eta > \sigma^{-1}$)
     zeta : float
-        Perturbation magnitude ζ (should scale as n^(-α) for 0 < α < 0.5)
+        Perturbation magnitude $\zeta$ (should scale as $n^{-\alpha}$ for $0 < \alpha < 0.5$)
     gamma : float
         Platform revenue per unit served
     allocation : AllocationFunction
@@ -864,13 +864,13 @@ def compute_experimentation_cost(
 ) -> float:
     """
     Compute the cost of experimentation (Theorem 9).
-    
-    The excess cost from randomization is O(ζ²) as shown in Theorem 9.
+
+    The excess cost from randomization is $O(\zeta^2)$ as shown in Theorem 9.
     This is because:
     - Symmetric perturbations don't shift equilibrium to first order
     - Suppliers with higher payments are more likely to activate
     - This increases average payment without increasing demand served
-    
+
     Parameters
     ----------
     p : float
@@ -883,23 +883,23 @@ def compute_experimentation_cost(
         Equilibrium supply fraction
     allocation : AllocationFunction
         The allocation function
-        
+
     Returns
     -------
     float
-        Approximate cost of experimentation (O(ζ²) term)
+        Approximate cost of experimentation ($O(\zeta^2)$ term)
     """
-    # The cost is approximately proportional to ζ² times a constant
+    # The cost is approximately proportional to $\zeta^2$ times a constant
     # depending on the curvature of the choice function
-    # (Theorem 9: u(p) - u(p, ζ) ≤ C·ζ²)
-    
+    # (Theorem 9: $u(p) - u(p, \zeta) \leq C \cdot \zeta^2$)
+
     # A rough bound based on the interference structure
     q = allocation(d_a / mu) if mu > 0 else 0
-    
+
     # The cost is dominated by correlation between higher payments
     # and higher activation probabilities
     cost_bound = 0.5 * zeta**2 * q * mu
-    
+
     return cost_bound
 
 
@@ -909,18 +909,18 @@ def compute_experimentation_cost(
 
 def compute_optimal_zeta(n: int, alpha: float = 0.3) -> float:
     """
-    Compute optimal perturbation magnitude ζ_n.
-    
-    From Theorem 6, perturbations should scale as ζ_n = ζ·n^(-α)
-    for 0 < α < 0.5 to ensure consistency.
-    
+    Compute optimal perturbation magnitude $\zeta_n$.
+
+    From Theorem 6, perturbations should scale as $\zeta_n = \zeta \cdot n^{-\alpha}$
+    for $0 < \alpha < 0.5$ to ensure consistency.
+
     Parameters
     ----------
     n : int
         Market size
     alpha : float
-        Decay exponent (0 < α < 0.5)
-        
+        Decay exponent ($0 < \alpha < 0.5$)
+
     Returns
     -------
     float

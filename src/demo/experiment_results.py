@@ -41,15 +41,15 @@ class TimePointData:
     state : Optional[GlobalState]
         Global state for this period (if using DemandParameters)
     gradient_estimate : Optional[float]
-        Estimated utility gradient Γ̂_t (local only)
+        Estimated utility gradient $\hat{\Gamma}_t$ (local only)
     delta_hat : Optional[float]
-        Estimated marginal response Δ̂ (local only)
+        Estimated marginal response $\hat{\Delta}$ (local only)
     upsilon_hat : Optional[float]
-        Estimated supply gradient Υ̂ (local only)
+        Estimated supply gradient $\hat{\Upsilon}$ (local only)
     zeta : Optional[float]
-        Perturbation magnitude ζ (local only)
+        Perturbation magnitude $\zeta$ (local only)
     epsilon : Optional[np.ndarray]
-        Payment perturbations ε_i (local only, if store_detailed_data=True)
+        Payment perturbations $\varepsilon_i$ (local only, if store_detailed_data=True)
     Z : Optional[np.ndarray]
         Individual supplier activations (local only, if store_detailed_data=True)
     """
@@ -69,13 +69,13 @@ class TimePointData:
 
     @property
     def D_bar(self) -> float:
-        """Scaled demand D̄ = D/n (requires n from context)"""
+        """Scaled demand $\bar{D} = D/n$ (requires n from context)"""
         # This will be computed in DataFrame conversion
         raise NotImplementedError("Use n from experiment params")
 
     @property
     def Z_bar(self) -> float:
-        """Scaled active supply Z̄ = T/n (requires n from context)"""
+        """Scaled active supply $\bar{Z} = T/n$ (requires n from context)"""
         raise NotImplementedError("Use n from experiment params")
 
 
@@ -97,7 +97,7 @@ class ExperimentParams:
     p_bounds : Tuple[float, float]
         Payment bounds [c_-, c_+]
     allocation : AllocationFunction
-        The allocation function ω
+        The allocation function $\omega$
     supplier_params : SupplierParameters
         Supplier choice model parameters
     demand : Union[float, DemandParameters]
@@ -109,7 +109,7 @@ class ExperimentParams:
     zeta : Optional[float]
         Base perturbation magnitude (local only)
     alpha : Optional[float]
-        Zeta decay exponent for scaling ζ_n = ζ·n^(-α) (local only)
+        Zeta decay exponent for scaling $\zeta_n = \zeta \cdot n^{-\alpha}$ (local only)
     delta : Optional[float]
         Finite difference step size (global only)
     rng_seed : Optional[int]
@@ -154,7 +154,7 @@ class ExperimentResults:
     final_payment : float
         Final payment level after T periods
     weighted_average_payment : Optional[float]
-        Weighted average p̄_T = (2/(T(T+1))) Σ_{t=1}^T t·p_t (local only, Corollary 8)
+        Weighted average $\bar{p}_T = \frac{2}{T(T+1)} \sum_{t=1}^T t \cdot p_t$ (local only, Corollary 8)
     average_payment : float
         Simple average of payment levels
     timepoints : List[TimePointData]
@@ -356,7 +356,7 @@ def compute_cumulative_regret(
     Compute cumulative regret over time.
 
     Regret at time t is defined as the cumulative squared error:
-        R_t = Σ_{s=1}^t (p_s - p*)²
+        $R_t = \sum_{s=1}^t (p_s - p^*)^2$
 
     Parameters
     ----------
@@ -397,9 +397,9 @@ def analyze_convergence(
         - final_payment: Last payment level
         - weighted_average: Weighted average (local only)
         - optimal_payment: Target payment
-        - final_error: |p_T - p*|
-        - weighted_error: |p̄_T - p*| (local only)
-        - mean_squared_error: Mean of (p_t - p*)²
+        - final_error: $|p_T - p^*|$
+        - weighted_error: $|\bar{p}_T - p^*|$ (local only)
+        - mean_squared_error: Mean of $(p_t - p^*)^2$
         - weighted_regret: Weighted sum of squared errors
     """
     payments = np.array([tp.p for tp in experiment.results.timepoints])

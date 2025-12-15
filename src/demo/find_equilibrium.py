@@ -37,15 +37,15 @@ class MeanFieldEquilibrium:
     Attributes
     ----------
     mu : float
-        Equilibrium fraction of active suppliers μ_a(p)
-        Solves: μ = E[f_{B_1}(p · ω(d_a/μ)) | A=a]  (Equation 3.13)
+        Equilibrium fraction of active suppliers $\mu_a(p)$
+        Solves: $\mu = E[f_{B_1}(p \cdot \omega(d_a/\mu)) | A=a]$  (Equation 3.13)
     q : float
-        Expected allocation per active supplier q_a(μ_a(p)) = ω(d_a/μ)
+        Expected allocation per active supplier $q_a(\mu_a(p)) = \omega(d_a/\mu)$
     u : float
-        Platform's expected utility per supplier u_a(p)
-        From Equation 3.15: u_a(p) = (r(d_a/μ) - p·ω(d_a/μ)) · μ
+        Platform's expected utility per supplier $u_a(p)$
+        From Equation 3.15: $u_a(p) = (r(d_a/\mu) - p \cdot \omega(d_a/\mu)) \cdot \mu$
     demand_supply_ratio : float
-        The ratio x = d_a / μ used in the allocation function
+        The ratio $x = d_a / \mu$ used in the allocation function
     """
     p: float
     d_a: float
@@ -66,15 +66,15 @@ def find_equilibrium_supply_mu(
     n_samples: int = 10000
 ) -> float:
     """
-    Solve for equilibrium supply fraction μ_a(p).
+    Solve for equilibrium supply fraction $\mu_a(p)$.
 
-    From Lemma 2, μ_a(p) is the unique solution to the fixed-point equation:
-        μ = E[f_{B_1}(p · ω(d_a/μ)) | A=a]
+    From Lemma 2, $\mu_a(p)$ is the unique solution to the fixed-point equation:
+        $\mu = E[f_{B_1}(p \cdot \omega(d_a/\mu)) | A=a]$
 
     This is Equation 3.13 in the mean-field limit.
 
     Implementation uses Brent's method to find the root of:
-        g(μ) = μ - E[f_{B_1}(p · ω(d_a/μ))] = 0
+        $g(\mu) = \mu - E[f_{B_1}(p \cdot \omega(d_a/\mu))] = 0$
 
     Parameters
     ----------
@@ -85,7 +85,7 @@ def find_equilibrium_supply_mu(
     private_features: PrivateFeatureDistribution
     allocation: AllocationFunction
     mu_bounds : Tuple[float, float]
-        Bounds for μ search (default: (1e-6, 1-1e-6))
+        Bounds for $\mu$ search (default: (1e-6, 1-1e-6))
     tol : float
         Tolerance for root finding
     m_samples: int
@@ -93,17 +93,17 @@ def find_equilibrium_supply_mu(
     Returns
     -------
     float
-        Equilibrium supply fraction μ_a(p)
+        Equilibrium supply fraction $\mu_a(p)$
 
     Notes
     -----
     Existence and uniqueness guaranteed by Lemma 1:
-    - As μ increases, allocation q decreases (more competition)
-    - This makes joining less attractive, reducing E[f(...)]
+    - As $\mu$ increases, allocation q decreases (more competition)
+    - This makes joining less attractive, reducing $E[f(...)]$
     - The negative feedback ensures a unique fixed point
     """
     def fixed_point_residual(mu: float) -> float:
-        """g(μ) = μ - E[f_{B_1}(p · ω(d_a/μ))]"""
+        """$g(\mu) = \mu - E[f_{B_1}(p \cdot \omega(d_a/\mu))]$"""
         x = d_a / mu  # demand-to-supply ratio
         q = allocation(x)  # allocation per supplier
         expected_revenue = p * q
@@ -147,13 +147,13 @@ def compute_mean_field_equilibrium(
 
     This implements Lemma 2, computing all key equilibrium quantities:
 
-    1. μ_a(p): Equilibrium supply fraction (Equation 3.13)
-    2. q_a(μ_a(p)) = ω(d_a/μ): Allocation per supplier (Equation 3.14)
-    3. u_a(p): Platform utility (Equation 3.15)
+    1. $\mu_a(p)$: Equilibrium supply fraction (Equation 3.13)
+    2. $q_a(\mu_a(p)) = \omega(d_a/\mu)$: Allocation per supplier (Equation 3.14)
+    3. $u_a(p)$: Platform utility (Equation 3.15)
 
-    For the linear revenue function r(x) = γ·ω(x) from Lemma 3,
+    For the linear revenue function $r(x) = \gamma \cdot \omega(x)$ from Lemma 3,
     the utility simplifies to:
-        u_a(p) = (γ - p) · ω(d_a/μ) · μ
+        $u_a(p) = (\gamma - p) \cdot \omega(d_a/\mu) \cdot \mu$
 
     Parameters
     ----------
@@ -179,8 +179,8 @@ def compute_mean_field_equilibrium(
     q = allocation(x)
 
     # Step 3: Compute utility (Equation 3.15)
-    # Using linear revenue: r(x) = γ · ω(x)
-    # u_a(p) = (r(d_a/μ) - p·ω(d_a/μ)) · μ = (γ - p) · q · μ
+    # Using linear revenue: $r(x) = \gamma \cdot \omega(x)$
+    # $u_a(p) = (r(d_a/\mu) - p \cdot \omega(d_a/\mu)) \cdot \mu = (\gamma - p) \cdot q \cdot \mu$
     # TODO switch to using the utility in platform_utility
     #u = (gamma - p) * q * mu
 

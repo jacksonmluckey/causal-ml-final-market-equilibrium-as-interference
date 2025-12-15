@@ -4,8 +4,8 @@ Platform Utility Computation
 This module implements the platform's utility functions.
 
 Key equations:
-- Utility (3.8): U = R(D, T) - Σ P_i Z_i S_i
-- Normalized utility (3.10): u_a(p) = (1/n) * E[U | A=a]
+- Utility (3.8): $U = R(D, T) - \sum P_i Z_i S_i$
+- Normalized utility (3.10): $u_a(p) = (1/n) \cdot E[U | A=a]$
 
 The platform wants to maximize expected utility by choosing the right payment p.
 """
@@ -22,9 +22,9 @@ def compute_platform_utility(
     p: float
 ) -> float:
     """
-    Compute mean-field utility given activation rate μ.
+    Compute mean-field utility given activation rate $\mu$.
 
-    u_a(p) = (r(d_a/μ) - p*ω(d_a/μ)) * μ
+    $u_a(p) = (r(d_a/\mu) - p \cdot \omega(d_a/\mu)) \cdot \mu$
 
     Args:
         revenue_fn: Platform revenue function
@@ -60,19 +60,18 @@ def compute_platform_utility_derivative(
     """
     Compute derivative of utility with respect to payment p.
 
-    du/dp = μ'(p) * [r(d_a/μ) - p*ω(d_a/μ) - (r'(d_a/μ) - p*ω'(d_a/μ)) * d_a/μ]
-            - ω(d_a/μ) * μ
+    $du/dp = \mu'(p) \cdot [r(d_a/\mu) - p \cdot \omega(d_a/\mu) - (r'(d_a/\mu) - p \cdot \omega'(d_a/\mu)) \cdot d_a/\mu] - \omega(d_a/\mu) \cdot \mu$
 
     Args:
         revenue_fn: Platform revenue function
         allocation: Allocation function
         d_a: Expected demand per supplier
-        mu: Activation rate μ_a(p)
-        mu_prime: Derivative dμ/dp
+        mu: Activation rate $\mu_a(p)$
+        mu_prime: Derivative $d\mu/dp$
         p: Payment
 
     Returns:
-        du_a/dp
+        $du_a/dp$
     """
     if mu <= 0:
         return 0.0

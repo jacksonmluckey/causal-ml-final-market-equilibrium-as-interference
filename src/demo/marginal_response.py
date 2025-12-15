@@ -44,16 +44,16 @@ class MarginalResponseAnalysis:
     Attributes
     ----------
     delta : float
-        Marginal response function Δ_a(p) from Definition 9:
-        Δ_a(p) = ω(d_a/μ) · E[f'_{B_1}(p·ω(d_a/μ))]
+        Marginal response function $\Delta_a(p)$ from Definition 9:
+        $\Delta_a(p) = \omega(d_a/\mu) \cdot E[f'_{B_1}(p \cdot \omega(d_a/\mu))]$
     mu_prime : float
-        Actual supply gradient dμ_a(p)/dp from Lemma 4 (Equation 3.20)
+        Actual supply gradient $d\mu_a(p)/dp$ from Lemma 4 (Equation 3.20)
     interference_factor : float
-        The factor 1 + R_a(p) that attenuates the marginal response
+        The factor $1 + R_a(p)$ that attenuates the marginal response
     sigma_delta : float
-        Scaled marginal sensitivity Σ^Δ_a(p) from Equation 3.21
+        Scaled marginal sensitivity $\Sigma^{\Delta}_a(p)$ from Equation 3.21
     sigma_omega : float
-        Scaled matching elasticity Σ^Ω_a(p) from Equation 3.21
+        Scaled matching elasticity $\Sigma^{\Omega}_a(p)$ from Equation 3.21
     """
     delta: float              # Marginal response Δ_a(p)
     mu_prime: float          # Actual gradient dμ/dp
@@ -70,17 +70,17 @@ def compute_marginal_response(
     n_monte_carlo: int = 10000
 ) -> float:
     """
-    Compute the marginal response function Δ_a(p).
+    Compute the marginal response function $\Delta_a(p)$.
 
     From Definition 9 (Equation 3.17 and its limit 3.19):
-        Δ_a(p) = ω(d_a/μ_a(p)) · E[f'_{B_1}(p·ω(d_a/μ_a(p))) | A=a]
+        $\Delta_a(p) = \omega(d_a/\mu_a(p)) \cdot E[f'_{B_1}(p \cdot \omega(d_a/\mu_a(p))) | A=a]$
 
     Intuition:
         - This measures how a SINGLE supplier's activation probability
           changes when their payment changes, HOLDING EQUILIBRIUM FIXED
         - It captures the "direct effect" ignoring feedback
-        - q = ω(d_a/μ) is the allocation rate
-        - E[f'_B(p·q)] is the expected sensitivity of choice to revenue
+        - $q = \omega(d_a/\mu)$ is the allocation rate
+        - $E[f'_B(p \cdot q)]$ is the expected sensitivity of choice to revenue
 
     Parameters
     ----------
@@ -94,12 +94,12 @@ def compute_marginal_response(
     Returns
     -------
     float
-        Marginal response Δ_a(p)
+        Marginal response $\Delta_a(p)$
     """
-    q = equilibrium.q  # ω(d_a/μ)
+    q = equilibrium.q  # $\omega(d_a/\mu)$
     expected_revenue = p * q
 
-    # E[f'_{B_1}(p·q)]
+    # $E[f'_{B_1}(p \cdot q)]$
     expected_choice_deriv = compute_expected_choice_derivative(
         expected_revenue,
         choice,
@@ -107,7 +107,7 @@ def compute_marginal_response(
         n_monte_carlo
     )
 
-    # Δ = q · E[f'_B(p·q)]
+    # $\Delta = q \cdot E[f'_B(p \cdot q)]$
     delta = q * expected_choice_deriv
 
     return delta
@@ -120,19 +120,19 @@ def compute_supply_gradient(
     allocation: AllocationFunction
 ) -> float:
     """
-    Compute the actual supply gradient dμ_a(p)/dp using Lemma 4.
+    Compute the actual supply gradient $d\mu_a(p)/dp$ using Lemma 4.
 
     From Equation 3.20:
-        μ'_a(p) = Δ_a(p) / (1 + (p·d_a·Δ_a(p)·ω'(d_a/μ)) / (μ²·ω(d_a/μ)))
+        $\mu'_a(p) = \Delta_a(p) / (1 + (p \cdot d_a \cdot \Delta_a(p) \cdot \omega'(d_a/\mu)) / (\mu^2 \cdot \omega(d_a/\mu)))$
 
     The denominator captures the interference attenuation:
-        - If Δ = 0: suppliers don't respond, so μ' = 0
-        - If ω' = 0: allocation doesn't depend on supply, no interference
+        - If $\Delta = 0$: suppliers don't respond, so $\mu' = 0$
+        - If $\omega' = 0$: allocation doesn't depend on supply, no interference
         - Otherwise: interference REDUCES the actual effect
 
     Note: The paper uses the form:
-        μ' = Δ / (1 + R)
-    where R = Σ^Δ · Σ^Ω (see Equation 3.21)
+        $\mu' = \Delta / (1 + R)$
+    where $R = \Sigma^{\Delta} \cdot \Sigma^{\Omega}$ (see Equation 3.21)
 
     Parameters
     ----------
@@ -141,22 +141,22 @@ def compute_supply_gradient(
     equilibrium : MeanFieldEquilibrium
         Pre-computed equilibrium
     delta : float
-        Marginal response Δ_a(p)
+        Marginal response $\Delta_a(p)$
 
     Returns
     -------
     float
-        Supply gradient dμ_a(p)/dp
+        Supply gradient $d\mu_a(p)/dp$
     """
     mu = equilibrium.mu
-    q = equilibrium.q  # ω(d_a/μ)
-    x = equilibrium.demand_supply_ratio  # d_a/μ
+    q = equilibrium.q  # $\omega(d_a/\mu)$
+    x = equilibrium.demand_supply_ratio  # $d_a/\mu$
 
-    # ω'(d_a/μ)
+    # $\omega'(d_a/\mu)$
     omega_prime = allocation.derivative(x)
 
     # From Equation 3.20:
-    # μ' = Δ / (1 + p·d_a·Δ·ω'(x) / (μ²·ω(x)))
+    # $\mu' = \Delta / (1 + p \cdot d_a \cdot \Delta \cdot \omega'(x) / (\mu^2 \cdot \omega(x)))$
     # The denominator is: 1 + interference_term
 
     if abs(q) < 1e-10:  # Avoid division by zero
@@ -166,7 +166,7 @@ def compute_supply_gradient(
 
     # Note: omega_prime is typically positive for our allocation functions,
     # and delta is positive, so interference_term > 0
-    # This means μ' < Δ: the actual effect is attenuated by interference
+    # This means $\mu' < \Delta$: the actual effect is attenuated by interference
 
     mu_prime = delta / (1.0 + interference_term)
 
@@ -185,20 +185,20 @@ def analyze_marginal_response(
     Comprehensive analysis of the marginal response function.
 
     This implements Section 3.2, computing:
-    1. Marginal response Δ_a(p) (Definition 9)
-    2. Actual supply gradient μ'_a(p) (Lemma 4)
+    1. Marginal response $\Delta_a(p)$ (Definition 9)
+    2. Actual supply gradient $\mu'_a(p)$ (Lemma 4)
     3. Interference factor decomposition (Equation 3.21)
 
-    The interference factor 1 + R_a(p) can be decomposed as:
-        R_a(p) = Σ^Δ_a(p) · Σ^Ω_a(p)
+    The interference factor $1 + R_a(p)$ can be decomposed as:
+        $R_a(p) = \Sigma^{\Delta}_a(p) \cdot \Sigma^{\Omega}_a(p)$
 
     where:
-        Σ^Δ_a(p) = p·Δ_a(p)/μ_a(p)  [scaled marginal sensitivity]
-        Σ^Ω_a(p) = (d_a/μ)·ω'(d_a/μ)/ω(d_a/μ)  [scaled matching elasticity]
+        $\Sigma^{\Delta}_a(p) = p \cdot \Delta_a(p)/\mu_a(p)$  [scaled marginal sensitivity]
+        $\Sigma^{\Omega}_a(p) = (d_a/\mu) \cdot \omega'(d_a/\mu)/\omega(d_a/\mu)$  [scaled matching elasticity]
 
     From the paper's discussion after Equation 3.21:
-        - Interference is negligible when Σ^Δ is small (suppliers unresponsive)
-        - Interference is negligible when Σ^Ω is small (demand >> supply)
+        - Interference is negligible when $\Sigma^{\Delta}$ is small (suppliers unresponsive)
+        - Interference is negligible when $\Sigma^{\Omega}$ is small (demand >> supply)
 
     Parameters
     ----------
@@ -228,13 +228,13 @@ def analyze_marginal_response(
     x = equilibrium.demand_supply_ratio
     omega_prime = allocation.derivative(x)
 
-    # Scaled marginal sensitivity: Σ^Δ = p·Δ/μ
+    # Scaled marginal sensitivity: $\Sigma^{\Delta} = p \cdot \Delta/\mu$
     sigma_delta = (p * delta) / mu if mu > 1e-10 else 0.0
 
-    # Scaled matching elasticity: Σ^Ω = x·ω'(x)/ω(x) where x = d_a/μ
+    # Scaled matching elasticity: $\Sigma^{\Omega} = x \cdot \omega'(x)/\omega(x)$ where $x = d_a/\mu$
     sigma_omega = (x * omega_prime) / q if q > 1e-10 else 0.0
 
-    # Interference factor: 1 + R = 1 + Σ^Δ · Σ^Ω
+    # Interference factor: $1 + R = 1 + \Sigma^{\Delta} \cdot \Sigma^{\Omega}$
     R = sigma_delta * sigma_omega
     interference_factor = 1.0 + R
 

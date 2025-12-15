@@ -1,19 +1,19 @@
 """
 Allocation Function for Stochastic Market
 
-This module implements the regular allocation function ω(x) and the
-finite-market allocation Ω(d, t).
+This module implements the regular allocation function $\omega(x)$ and the
+finite-market allocation $\Omega(d, t)$.
 
 A regular allocation function (Definition 5) must satisfy:
 1. Smooth, concave, non-decreasing
-2. lim_{x→0} ω(x) = 0 (no demand → no allocation)
-3. lim_{x→∞} ω(x) ≤ 1 (suppliers have bounded capacity)
-4. lim_{x→0} ω'(x) ≤ 1 (allocation rate bounded by demand)
+2. $\lim_{x \to 0} \omega(x) = 0$ (no demand $\to$ no allocation)
+3. $\lim_{x \to \infty} \omega(x) \leq 1$ (suppliers have bounded capacity)
+4. $\lim_{x \to 0} \omega'(x) \leq 1$ (allocation rate bounded by demand)
 
 Key relationship (Assumption 1):
-Ω(d, t) = ω(d/t) + l(d, t)
+$\Omega(d, t) = \omega(d/t) + l(d, t)$
 
-where l(d, t) is an error term that vanishes as d, t → ∞
+where $l(d, t)$ is an error term that vanishes as $d, t \to \infty$
 """
 
 import numpy as np
@@ -26,18 +26,18 @@ from .utils import numerical_derivative
 @dataclass
 class AllocationFunction:
     """
-    Regular allocation function ω(x) as defined in Definition 5.
+    Regular allocation function $\omega(x)$ as defined in Definition 5.
 
     The allocation function captures how much demand each active
-    supplier serves when the demand-to-supply ratio is x = d/t.
+    supplier serves when the demand-to-supply ratio is $x = d/t$.
 
     Parameters
     ----------
     omega : Callable[[float], float]
-        The allocation function ω(x) mapping demand-to-supply ratio to
+        The allocation function $\omega(x)$ mapping demand-to-supply ratio to
         expected demand served per active supplier
     omega_prime : Optional[Callable[[float], float]]
-        The derivative ω'(x). If None, must be computed numerically when needed.
+        The derivative $\omega'(x)$. If None, must be computed numerically when needed.
     name : str
         Descriptive name for the allocation function
     """
@@ -46,11 +46,11 @@ class AllocationFunction:
     name: str = "Generic"
 
     def __call__(self, x: float) -> float:
-        """Evaluate ω(x)."""
+        """Evaluate $\omega(x)$."""
         return self.omega(x)
-    
+
     def derivative(self, x: float) -> float:
-        """Evaluate ω'(x)."""
+        """Evaluate $\omega'(x)$."""
         if self.omega_prime is not None:
             return self.omega_prime(x)
         return numerical_derivative(self.omega, x)
@@ -63,17 +63,17 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
     Each active supplier operates as an M/M/1 queue with capacity L.
     The allocation function is:
 
-    ω(x) = (x - x^L) / (1 - x^L)  for x ≠ 1
-    ω(1) = 1 - 1/L
+    $\omega(x) = (x - x^L) / (1 - x^L)$ for $x \neq 1$
+    $\omega(1) = 1 - 1/L$
 
     Properties:
-    - As L → ∞, ω(x) → min(x, 1) (suppliers can serve all demand up to capacity)
+    - As $L \to \infty$, $\omega(x) \to \min(x, 1)$ (suppliers can serve all demand up to capacity)
     - For finite L, some demand is dropped when queues are full
 
     Parameters
     ----------
     L : int
-        Queue capacity (must be ≥ 2)
+        Queue capacity (must be $\geq 2$)
 
     Returns
     -------
@@ -87,13 +87,13 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
         """
         Allocation function for M/M/1 queue with capacity L.
 
-        ω(x) = (x - x^L) / (1 - x^L)
+        $\omega(x) = (x - x^L) / (1 - x^L)$
         """
         if x <= 0:
             return 0.0
-        if x > 10:  # For very large x, ω(x) → 1
+        if x > 10:  # For very large x, $\omega(x) \to 1$
             return 1.0
-        # Handle x ≈ 1 separately to avoid numerical issues
+        # Handle $x \approx 1$ separately to avoid numerical issues
         if abs(x - 1) < 1e-10:
             return 1 - 1/L
         x_L = x ** L
@@ -101,17 +101,17 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
 
     def omega_prime(x: float) -> float:
         """
-        Derivative of ω(x).
+        Derivative of $\omega(x)$.
 
-        Using quotient rule on ω(x) = (x - x^L) / (1 - x^L)
+        Using quotient rule on $\omega(x) = (x - x^L) / (1 - x^L)$
         """
         if x <= 0:
-            return 1.0  # lim_{x→0} ω'(x) = 1
+            return 1.0  # $\lim_{x \to 0} \omega'(x) = 1$
         if x > 10:
-            return 0.0  # For large x, ω(x) ≈ 1, so derivative ≈ 0
+            return 0.0  # For large x, $\omega(x) \approx 1$, so derivative $\approx 0$
         if abs(x - 1) < 1e-10:
-            # Use L'Hopital's rule or series expansion near x=1
-            # ω'(1) = (L-1)/(2L)
+            # Use L'Hopital's rule or series expansion near $x=1$
+            # $\omega'(1) = (L-1)/(2L)$
             return (L - 1) / (2 * L)
         x_L = x ** L
         x_Lm1 = x ** (L - 1)
@@ -128,7 +128,7 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
 
 def create_linear_allocation() -> AllocationFunction:
     """
-    Create simple linear allocation: ω(x) = min(x, 1) (limiting case as L → ∞).
+    Create simple linear allocation: $\omega(x) = \min(x, 1)$ (limiting case as $L \to \infty$).
 
     Each supplier serves all their demand up to capacity 1.
 
@@ -157,9 +157,9 @@ def create_smooth_linear_allocation() -> AllocationFunction:
     """
     Create smooth approximation to linear allocation.
 
-    ω(x) = 1 - exp(-x)
+    $\omega(x) = 1 - \exp(-x)$
 
-    This satisfies all regularity conditions and approximates min(x, 1).
+    This satisfies all regularity conditions and approximates $\min(x, 1)$.
 
     Returns
     -------
@@ -189,10 +189,10 @@ def create_simple_allocation():
     """
     Create a simple concave allocation function for testing.
 
-    Uses ω(x) = x / (1 + x), which satisfies all properties in Definition 5:
+    Uses $\omega(x) = x / (1 + x)$, which satisfies all properties in Definition 5:
         - Smooth, concave, non-decreasing
-        - ω(0) = 0, ω(∞) = 1
-        - ω'(0) = 1
+        - $\omega(0) = 0$, $\omega(\infty) = 1$
+        - $\omega'(0) = 1$
     """
 
     def omega(x: float) -> float:
@@ -217,10 +217,10 @@ def compute_expected_allocation(allocation: AllocationFunction, mu: float, d_a: 
     """
     Compute expected allocation given fraction of active suppliers.
 
-    q_a(μ) = ω(d_a / μ)
+    $q_a(\mu) = \omega(d_a / \mu)$
 
-    This is the expected demand per active supplier when fraction μ
-    of suppliers are active and expected demand per supplier is d_a.
+    This is the expected demand per active supplier when fraction $\mu$
+    of suppliers are active and expected demand per supplier is $d_a$.
 
     Args:
         allocation: The allocation function
@@ -242,11 +242,11 @@ def compute_expected_allocation_derivative(
     d_a: float
 ) -> float:
     """
-    Compute derivative of q with respect to μ.
+    Compute derivative of q with respect to $\mu$.
 
-    d/dμ q_a(μ) = -ω'(d_a/μ) * d_a / μ²
+    $\frac{d}{d\mu} q_a(\mu) = -\omega'(d_a/\mu) \cdot d_a / \mu^2$
 
-    This is negative: more suppliers → less demand per supplier.
+    This is negative: more suppliers $\to$ less demand per supplier.
 
     Args:
         allocation: The allocation function
@@ -254,7 +254,7 @@ def compute_expected_allocation_derivative(
         d_a: Expected demand per supplier
 
     Returns:
-        dq_a/dμ
+        $dq_a/d\mu$
     """
     if mu <= 0:
         return 0.0
@@ -272,7 +272,7 @@ def compute_total_demand_served(
     """
     Compute total demand served across all active suppliers.
 
-    Total served = t * ω(d/t)
+    Total served = $t \cdot \omega(d/t)$
 
     This is bounded by d (can't serve more demand than exists).
 

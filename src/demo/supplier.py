@@ -4,12 +4,12 @@ Supplier Choice Model for Stochastic Market
 This module implements the supplier decision-making process.
 
 Key equation (3.6):
-μ_a(π) = E[f_{B_i}(P_i * E[Ω(D,T)|A=a]) | A=a]
+$\mu_a(\pi) = E[f_{B_i}(P_i \cdot E[\Omega(D,T)|A=a]) | A=a]$
 
 Where:
-- P_i is the payment offered to supplier i
-- B_i is supplier i's private feature (e.g., outside option/cost)
-- f_b(x) is the choice function: probability of becoming active given expected revenue x
+- $P_i$ is the payment offered to supplier i
+- $B_i$ is supplier i's private feature (e.g., outside option/cost)
+- $f_b(x)$ is the choice function: probability of becoming active given expected revenue x
 
 The key insight is that suppliers use STATIONARY reasoning:
 - They consider the average market equilibrium, not their own effect on it
@@ -65,12 +65,12 @@ class ChoiceFunction:
     def derivative(self, x: float, b: float) -> float:
         """
         Takes the derivative df/dx of choice function with respect to expected revenue.
-        Evaluates f'_b(x) = ∂f_b/∂x.
-        
+        Evaluates $f'_b(x) = \partial f_b/\partial x$.
+
         This measures how sensitive the supplier's decision is to revenue changes.
-        
+
         This appears in the marginal response function (Definition 9):
-            Δ_a(p) = q_a(μ_a(p)) · E[f'_{B_1}(p · q_a(μ_a(p))) | A=a]
+            $\Delta_a(p) = q_a(\mu_a(p)) \cdot E[f'_{B_1}(p \cdot q_a(\mu_a(p))) | A=a]$
         """
         if self.f_prime is not None:
             return self.f_prime(x, b)
@@ -82,19 +82,19 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
     """
     Create logistic choice function from Example 7.
 
-    P(Z_i = 1 | P_i, π, A) = 1 / (1 + exp(-α(P_i · E[Ω] - B_i)))
+    $P(Z_i = 1 | P_i, \pi, A) = 1 / (1 + \exp(-\alpha(P_i \cdot E[\Omega] - B_i)))$
 
     Properties:
-    - α controls sensitivity: larger α → more deterministic decisions
-    - B_i is the break-even cost threshold
+    - $\alpha$ controls sensitivity: larger $\alpha \to$ more deterministic decisions
+    - $B_i$ is the break-even cost threshold
     - Supplier activates if expected revenue exceeds their cost threshold
-    
-    As α → ∞, this becomes a step function: activate iff revenue > cost
+
+    As $\alpha \to \infty$, this becomes a step function: activate iff revenue > cost
 
     Parameters
     ----------
     alpha : float
-        Sensitivity parameter. As α → ∞, decision becomes deterministic.
+        Sensitivity parameter. As $\alpha \to \infty$, decision becomes deterministic.
 
     Returns
     -------
@@ -104,8 +104,8 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
     def f(x: float, b: float) -> float:
         """
         Logistic choice probability.
-        f_b(x) = 1 / (1 + exp(-α(x - b)))
-        
+        $f_b(x) = 1 / (1 + \exp(-\alpha(x - b)))$
+
         Args:
             x: Expected revenue
             b: Break-even cost threshold
@@ -122,7 +122,7 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
     def f_prime(x: float, b: float) -> float:
         """
         Derivative of logistic choice function.
-        df/dx = α * f(x,b) * (1 - f(x,b))
+        $df/dx = \alpha \cdot f(x,b) \cdot (1 - f(x,b))$
         """
         prob = f(x, b)
         return alpha * prob * (1.0 - prob)
@@ -130,7 +130,7 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
     return ChoiceFunction(
         f=f,
         f_prime=f_prime,
-        name=f"Logistic (α={alpha})"
+        name=f"Logistic ($\\alpha$={alpha})"
     )
 
 
@@ -142,7 +142,7 @@ class PrivateFeatureDistribution:
     Captures heterogeneity across suppliers (e.g., outside options,
     break-even cost thresholds).
 
-    Paper assumes B_i is i.i.d. from some B distribution.
+    Paper assumes $B_i$ is i.i.d. from some B distribution.
 
     Parameters
     ----------
@@ -163,14 +163,14 @@ def create_lognormal_costs(
     """
     Create lognormal distribution for supplier costs.
 
-    log(B_i / scale) ~ N(log_mean, log_std²)
+    $\log(B_i / \text{scale}) \sim N(\text{log\_mean}, \text{log\_std}^2)$
 
     Parameters
     ----------
     log_mean : float
-        Mean of log(B_i / scale)
+        Mean of $\log(B_i / \text{scale})$
     log_std : float
-        Standard deviation of log(B_i / scale)
+        Standard deviation of $\log(B_i / \text{scale})$
     scale : float
         Scale factor (20 in the paper's example)
 
@@ -184,7 +184,7 @@ def create_lognormal_costs(
 
     return PrivateFeatureDistribution(
         sample=sample,
-        name=f"LogNormal(μ={log_mean}, σ={log_std}, scale={scale})"
+        name=f"LogNormal($\\mu$={log_mean}, $\\sigma$={log_std}, scale={scale})"
     )
 
 
@@ -192,7 +192,7 @@ def create_uniform_costs(low: float = 5.0, high: float = 50.0) -> PrivateFeature
     """
     Create uniform distribution for supplier costs.
 
-    B_i ~ Uniform(low, high)
+    $B_i \sim \text{Uniform}(\text{low}, \text{high})$
     """
     def sample(n: int) -> np.ndarray:
         return np.random.uniform(low, high, n)
@@ -210,7 +210,7 @@ def compute_expected_choice_probability(
     n_samples: int = 10000
 ) -> float:
     """
-    Compute E[f_B(x)] via Monte Carlo.
+    Compute $E[f_B(x)]$ via Monte Carlo.
 
     This is the average probability of activation across all supplier types
     when expected revenue is x.
@@ -220,16 +220,16 @@ def compute_expected_choice_probability(
     revenue : float
         Expected revenue (x)
     choice : ChoiceFunction
-        The choice function f_b(·)
+        The choice function $f_b(\cdot)$
     private_features : PrivateFeatureDistribution
-        Distribution of B_i
+        Distribution of $B_i$
     n_samples : int
         Number of Monte Carlo samples
 
     Returns
     -------
     float
-        E[f_B(x)]
+        $E[f_B(x)]$
     """
     b_samples = private_features.sample(n_samples)
     probs = np.array([choice(revenue, b) for b in b_samples])
@@ -243,7 +243,7 @@ def compute_expected_choice_derivative(
     n_samples: int = 10000
 ) -> float:
     """
-    Compute E[f'_B(x)] via Monte Carlo.
+    Compute $E[f'_B(x)]$ via Monte Carlo.
 
     Average sensitivity of activation to revenue changes.
 
@@ -252,16 +252,16 @@ def compute_expected_choice_derivative(
     x : float
         Expected revenue
     choice : ChoiceFunction
-        The choice function f_b(·)
+        The choice function $f_b(\cdot)$
     private_features : PrivateFeatureDistribution
-        Distribution of B_i
+        Distribution of $B_i$
     n_samples : int
         Number of Monte Carlo samples
 
     Returns
     -------
     float
-        E[f'_B(x)]
+        $E[f'_B(x)]$
     """
     b_samples = private_features.sample(n_samples)
     derivs = np.array([choice.derivative(x, b) for b in b_samples])
@@ -276,9 +276,9 @@ class SupplierParameters:
     Parameters
     ----------
     choice : ChoiceFunction
-        The choice function f_b(·)
+        The choice function $f_b(\cdot)$
     private_features : PrivateFeatureDistribution
-        Distribution of B_i (outside options/costs)
+        Distribution of $B_i$ (outside options/costs)
     """
     choice: ChoiceFunction
     private_features: PrivateFeatureDistribution
@@ -290,7 +290,7 @@ def compute_activation_probability(
     n_monte_carlo: int
 ) -> float:
     """
-    Compute μ = E[f_B(expected_revenue)].
+    Compute $\mu = E[f_B(\text{expected\_revenue})]$.
 
     This is the fraction of suppliers who become active when
     expected revenue is `expected_revenue`.
@@ -300,13 +300,13 @@ def compute_activation_probability(
     params : SupplierParameters
         Supplier population parameters
     expected_revenue : float
-        Expected revenue (payment × expected allocation)
+        Expected revenue (payment $\times$ expected allocation)
     n_monte_carlo: int
 
     Returns
     -------
     float
-        Activation probability μ
+        Activation probability $\mu$
     """
     return compute_expected_choice_probability(
         expected_revenue,
@@ -322,7 +322,7 @@ def compute_activation_sensitivity(
     n_monte_carlo: int
 ) -> float:
     """
-    Compute E[f'_B(expected_revenue)].
+    Compute $E[f'_B(\text{expected\_revenue})]$.
 
     Measures how sensitive activation is to revenue changes.
     Used in computing the marginal response function.
@@ -338,7 +338,7 @@ def compute_activation_sensitivity(
     Returns
     -------
     float
-        E[f'_B(expected_revenue)]
+        $E[f'_B(\text{expected\_revenue})]$
     """
     return compute_expected_choice_derivative(
         expected_revenue,
@@ -365,7 +365,7 @@ def sample_supplier_activations(
     payments : np.ndarray
         Payment offered to each supplier (length n)
     expected_allocation : float
-        Expected demand per active supplier E[Ω]
+        Expected demand per active supplier $E[\Omega]$
     params : SupplierParameters
         Supplier population parameters
     seed : Optional[int]
