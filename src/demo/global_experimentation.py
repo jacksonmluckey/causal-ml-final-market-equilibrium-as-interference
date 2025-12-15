@@ -14,7 +14,7 @@ of decay in errors, compared to 1/T for local experimentation.
 
 import numpy as np
 from dataclasses import dataclass
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, overload
 
 from .allocation import AllocationFunction
 from .supplier import SupplierParameters, sample_supplier_activations
@@ -131,6 +131,15 @@ def run_global_experiment(
     )
 
 
+@overload
+def run_global_learning(
+    *,
+    params: ExperimentParams,
+    rng: Optional[np.random.Generator] = None
+) -> Experiment: ...
+
+
+@overload
 def run_global_learning(
     T: int,
     n: int,
@@ -145,6 +154,27 @@ def run_global_learning(
     p_bounds: Tuple[float, float] = (0.0, float('inf')),
     rng: Optional[np.random.Generator] = None,
     rng_seed: Optional[int] = None,
+    *,
+    params: None = None
+) -> Experiment: ...
+
+
+def run_global_learning(
+    T: Optional[int] = None,
+    n: Optional[int] = None,
+    p_init: Optional[float] = None,
+    eta: Optional[float] = None,
+    delta: Optional[float] = None,
+    gamma: Optional[float] = None,
+    allocation: Optional[AllocationFunction] = None,
+    supplier_params: Optional[SupplierParameters] = None,
+    d_a: Optional[float] = None,
+    demand_params: Optional[DemandParameters] = None,
+    p_bounds: Optional[Tuple[float, float]] = None,
+    rng: Optional[np.random.Generator] = None,
+    rng_seed: Optional[int] = None,
+    *,
+    params: Optional[ExperimentParams] = None
 ) -> Experiment:
     """
     Run global experimentation using finite-difference gradient estimates.
@@ -188,7 +218,43 @@ def run_global_learning(
     -------
     Experiment
         Complete experiment with parameters and results
+
+    Notes
+    -----
+    Can be called in two ways:
+    1. With ExperimentParams: run_global_learning(params=exp_params)
+    2. With individual parameters: run_global_learning(T=100, n=1000, ...)
     """
+    # Extract parameters from ExperimentParams if provided
+    if params is not None:
+        T = params.T
+        n = params.n
+        p_init = params.p_init
+        gamma = params.gamma
+        allocation = params.allocation
+        supplier_params = params.supplier_params
+        p_bounds = params.p_bounds
+        eta = params.eta
+        delta = params.delta
+        rng_seed = params.rng_seed
+
+        # Extract demand parameters
+        if isinstance(params.demand, DemandParameters):
+            demand_params = params.demand
+            d_a = None
+        else:
+            d_a = params.demand
+            demand_params = None
+    else:
+        # Validate that required parameters are provided
+        if any(x is None for x in [T, n, p_init, eta, delta, gamma, allocation, supplier_params]):
+            raise ValueError(
+                "When params is not provided, all of T, n, p_init, eta, delta, "
+                "gamma, allocation, and supplier_params must be provided"
+            )
+        if p_bounds is None:
+            p_bounds = (0.0, float('inf'))
+
     # Setup RNG
     if rng is None:
         if rng_seed is not None:
@@ -198,24 +264,25 @@ def run_global_learning(
 
     p_bounds = (float(p_bounds[0]), float(p_bounds[1]))
 
-    # Create experiment parameters
-    params = ExperimentParams(
-        T=T,
-        n=n,
-        p_init=p_init,
-        gamma=gamma,
-        p_bounds=p_bounds,
-        allocation=allocation,
-        supplier_params=supplier_params,
-        demand=demand_params if demand_params is not None else d_a,
-        eta=eta,
-        experiment_type="global",
-        zeta=None,
-        alpha=None,
-        delta=delta,
-        rng_seed=rng_seed,
-        store_detailed_data=False
-    )
+    # Create experiment parameters (only if not already provided)
+    if params is None:
+        params = ExperimentParams(
+            T=T,
+            n=n,
+            p_init=p_init,
+            gamma=gamma,
+            p_bounds=p_bounds,
+            allocation=allocation,
+            supplier_params=supplier_params,
+            demand=demand_params if demand_params is not None else d_a,
+            eta=eta,
+            experiment_type="global",
+            zeta=None,
+            alpha=None,
+            delta=delta,
+            rng_seed=rng_seed,
+            store_detailed_data=False
+        )
 
     from .find_equilibrium import find_equilibrium_supply_mu
 

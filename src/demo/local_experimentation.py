@@ -21,7 +21,7 @@ References:
 
 import numpy as np
 from dataclasses import dataclass
-from typing import Optional, Tuple, List, Callable, Union
+from typing import Optional, Tuple, List, Callable, Union, overload
 
 from .allocation import AllocationFunction
 from .supplier import (
@@ -590,6 +590,16 @@ def mirror_descent_update(
     )
 
 
+@overload
+def run_learning_algorithm(
+    *,
+    params: ExperimentParams,
+    rng: Optional[np.random.Generator] = None,
+    verbose: bool = False
+) -> Experiment: ...
+
+
+@overload
 def run_learning_algorithm(
     T: int,
     n: int,
@@ -606,7 +616,31 @@ def run_learning_algorithm(
     store_detailed_data: bool = False,
     rng: Optional[np.random.Generator] = None,
     rng_seed: Optional[int] = None,
-    verbose: bool = False
+    verbose: bool = False,
+    *,
+    params: None = None
+) -> Experiment: ...
+
+
+def run_learning_algorithm(
+    T: Optional[int] = None,
+    n: Optional[int] = None,
+    p_init: Optional[float] = None,
+    eta: Optional[float] = None,
+    zeta: Optional[float] = None,
+    gamma: Optional[float] = None,
+    allocation: Optional[AllocationFunction] = None,
+    supplier_params: Optional[SupplierParameters] = None,
+    d_a: Optional[float] = None,
+    demand_params: Optional[DemandParameters] = None,
+    p_bounds: Optional[Tuple[float, float]] = None,
+    alpha: float = 0.3,
+    store_detailed_data: bool = False,
+    rng: Optional[np.random.Generator] = None,
+    rng_seed: Optional[int] = None,
+    verbose: bool = False,
+    *,
+    params: Optional[ExperimentParams] = None
 ) -> Experiment:
     """
     Run the complete learning algorithm from Section 4.2.
@@ -664,7 +698,43 @@ def run_learning_algorithm(
     -----
     Either d_a or demand_params must be provided. If demand_params is given,
     the global state A_t is sampled each period according to the paper's model.
+
+    Can be called in two ways:
+    1. With ExperimentParams: run_learning_algorithm(params=exp_params)
+    2. With individual parameters: run_learning_algorithm(T=100, n=1000, ...)
     """
+    # Extract parameters from ExperimentParams if provided
+    if params is not None:
+        T = params.T
+        n = params.n
+        p_init = params.p_init
+        gamma = params.gamma
+        allocation = params.allocation
+        supplier_params = params.supplier_params
+        p_bounds = params.p_bounds
+        eta = params.eta
+        zeta = params.zeta
+        alpha = params.alpha if params.alpha is not None else 0.3
+        store_detailed_data = params.store_detailed_data
+        rng_seed = params.rng_seed
+
+        # Extract demand parameters
+        if isinstance(params.demand, DemandParameters):
+            demand_params = params.demand
+            d_a = None
+        else:
+            d_a = params.demand
+            demand_params = None
+    else:
+        # Validate that required parameters are provided
+        if any(x is None for x in [T, n, p_init, eta, zeta, gamma, allocation, supplier_params]):
+            raise ValueError(
+                "When params is not provided, all of T, n, p_init, eta, zeta, "
+                "gamma, allocation, and supplier_params must be provided"
+            )
+        if p_bounds is None:
+            p_bounds = (0.0, float('inf'))
+
     # Setup RNG
     if rng is None:
         if rng_seed is not None:
@@ -675,24 +745,25 @@ def run_learning_algorithm(
     if d_a is None and demand_params is None:
         raise ValueError("Must provide either d_a or demand_params")
 
-    # Create experiment parameters
-    params = ExperimentParams(
-        T=T,
-        n=n,
-        p_init=p_init,
-        gamma=gamma,
-        p_bounds=p_bounds,
-        allocation=allocation,
-        supplier_params=supplier_params,
-        demand=demand_params if demand_params is not None else d_a,
-        eta=eta,
-        experiment_type="local",
-        zeta=zeta,
-        alpha=alpha,
-        delta=None,
-        rng_seed=rng_seed,
-        store_detailed_data=store_detailed_data
-    )
+    # Create experiment parameters (only if not already provided)
+    if params is None:
+        params = ExperimentParams(
+            T=T,
+            n=n,
+            p_init=p_init,
+            gamma=gamma,
+            p_bounds=p_bounds,
+            allocation=allocation,
+            supplier_params=supplier_params,
+            demand=demand_params if demand_params is not None else d_a,
+            eta=eta,
+            experiment_type="local",
+            zeta=zeta,
+            alpha=alpha,
+            delta=None,
+            rng_seed=rng_seed,
+            store_detailed_data=store_detailed_data
+        )
 
     # Initialize optimizer
     opt_state = initialize_optimizer(p_init, p_bounds)
