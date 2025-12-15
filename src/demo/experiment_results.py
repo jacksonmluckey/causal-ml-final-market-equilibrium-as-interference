@@ -293,14 +293,14 @@ def experiment_to_dataframe(experiment: Experiment) -> pl.DataFrame:
     # Add state columns if using DemandParameters
     if experiment.params.demand_params is not None:
         data['state_d_a'] = [tp.state.d_a if tp.state else None for tp in timepoints]
-        data['state_index'] = [tp.state.state_index if tp.state else None for tp in timepoints]
+        data['state_name'] = [tp.state.name if tp.state else None for tp in timepoints]
 
     # Add experiment metadata as constants
     data['experiment_type'] = experiment.params.experiment_type
     data['n'] = n
     data['gamma'] = experiment.params.gamma
 
-    df = pl.DataFrame(data)
+    df = pl.DataFrame(data, strict = False)
 
     # Add cumulative regret if computed
     if experiment.results.cumulative_regret is not None:

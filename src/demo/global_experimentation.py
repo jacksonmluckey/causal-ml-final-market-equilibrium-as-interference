@@ -196,6 +196,8 @@ def run_global_learning(
         else:
             rng = np.random.default_rng()
 
+    p_bounds = (float(p_bounds[0]), float(p_bounds[1]))
+
     # Create experiment parameters
     params = ExperimentParams(
         T=T,

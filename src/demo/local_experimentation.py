@@ -496,19 +496,21 @@ def initialize_optimizer(
 ) -> OptimizationState:
     """
     Initialize the first-order optimization algorithm.
-    
+
     Parameters
     ----------
     p_init : float
         Initial payment level p_1
     p_bounds : Tuple[float, float]
         Payment bounds [c_-, c_+] (interval I)
-        
+
     Returns
     -------
     OptimizationState
         Initial optimization state
     """
+    p_bounds = (float(p_bounds[0]), float(p_bounds[1]))
+
     return OptimizationState(
         t=1,
         p=np.clip(p_init, p_bounds[0], p_bounds[1]),
@@ -526,16 +528,16 @@ def mirror_descent_update(
 ) -> OptimizationState:
     """
     Perform one step of the mirror descent update.
-    
+
     From equation (4.5):
         p_{t+1} = argmin_p { (1/2η) Σ_{s=1}^t s(p - p_s)² - θ_t·p : p ∈ I }
         where θ_t = Σ_{s=1}^t s·Γ̂_s
-    
+
     For the unconstrained case (I = ℝ), this reduces to:
         p_{t+1} = p_t + (2η·Γ̂_t) / (t+1)
-    
+
     For the constrained case, we project onto the interval.
-    
+
     Parameters
     ----------
     state : OptimizationState
@@ -546,12 +548,14 @@ def mirror_descent_update(
         Step size η (should satisfy η > σ⁻¹ where σ is strong concavity)
     p_bounds : Tuple[float, float]
         Payment bounds [c_-, c_+]
-        
+
     Returns
     -------
     OptimizationState
         Updated optimization state
     """
+    p_bounds = (float(p_bounds[0]), float(p_bounds[1]))
+
     t = state.t
     c_minus, c_plus = p_bounds
     
@@ -569,7 +573,7 @@ def mirror_descent_update(
     # p_{t+1} = p_t + 2η·Γ̂_t / (t+1)
     
     p_new = state.p + (2 * eta * gradient) / (t + 1)
-    
+
     # Project onto interval I = [c_-, c_+]
     p_new = np.clip(p_new, c_minus, c_plus)
     
@@ -732,7 +736,7 @@ def run_learning_algorithm(
             d_a=current_d_a,
             demand_params=demand_params,
             state=current_state,
-            store_detailed_data=store_detailed_data,
+            store_detailed_data=True,
             rng=rng
         )
 

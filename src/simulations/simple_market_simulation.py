@@ -4,7 +4,8 @@ from demo import (
     SupplierParameters,
     create_logistic_choice,
     create_lognormal_costs,
-    DemandParameters, GlobalState
+    DemandParameters, GlobalState,
+    experiment_to_dataframe
 )
 import numpy as np
 import polars as pl
@@ -46,6 +47,8 @@ experiment_results = run_learning_algorithm(
     verbose = True,
     rng=rng
 )
+
+df = experiment_to_dataframe(experiment_results)
 
 def experiment_results_to_df(experiment_results):
     timepoints = len(experiment_results.utility_history)
