@@ -1,4 +1,4 @@
-"""
+r"""
 Learning via Local Experimentation
 
 This module implements Section 4 of Wager & Xu (2021)
@@ -55,7 +55,7 @@ def generate_payment_perturbations(
     n: int,
     rng: Optional[np.random.Generator] = None
 ) -> np.ndarray:
-    """
+    r"""
     Generate symmetric payment perturbations $\varepsilon_i \in \{-1, +1\}$.
 
     From equation (2.1)/(3.11):
@@ -94,7 +94,7 @@ def run_local_experiment(
     store_detailed_data: bool = False,
     rng: Optional[np.random.Generator] = None
 ) -> TimePointData:
-    """
+    r"""
     Run one period of local experimentation.
 
     This implements the data collection step of Section 4.1:
@@ -211,7 +211,7 @@ def run_local_experiment(
 
 
 def estimate_delta_hat(data: TimePointData, n: int) -> float:
-    """
+    r"""
     Estimate the marginal response function $\hat{\Delta}$ from local experiment data.
 
     From equation (4.1):
@@ -262,7 +262,7 @@ def estimate_upsilon_hat(
     n: int,
     allocation: AllocationFunction
 ) -> float:
-    """
+    r"""
     Estimate the supply gradient $\hat{\Upsilon} \approx \mu'(p)$.
 
     From equation (4.2):
@@ -316,7 +316,7 @@ def estimate_gamma_hat(
     revenue_fn: Callable[[float], float],
     revenue_fn_prime: Callable[[float], float]
 ) -> float:
-    """
+    r"""
     Estimate the utility gradient $\hat{\Gamma} \approx du(p)/dp$.
 
     From equation (4.3):
@@ -368,7 +368,7 @@ def estimate_gamma_hat(
 
 @dataclass
 class GradientEstimate:
-    """
+    r"""
     Complete gradient estimate from one period of local experimentation.
 
     Attributes
@@ -397,7 +397,7 @@ def estimate_utility_gradient(
     allocation: AllocationFunction,
     gamma: float
 ) -> GradientEstimate:
-    """
+    r"""
     Complete gradient estimation from local experiment data.
 
     This implements the full estimation procedure from Section 4.1
@@ -467,7 +467,7 @@ def estimate_utility_gradient(
 
 @dataclass
 class OptimizationState:
-    """
+    r"""
     State of the first-order optimization algorithm.
     
     Attributes
@@ -494,7 +494,7 @@ def initialize_optimizer(
     p_init: float,
     p_bounds: Tuple[float, float] = (0.0, float('inf'))
 ) -> OptimizationState:
-    """
+    r"""
     Initialize the first-order optimization algorithm.
 
     Parameters
@@ -526,7 +526,7 @@ def mirror_descent_update(
     eta: float,
     p_bounds: Tuple[float, float] = (0.0, float('inf'))
 ) -> OptimizationState:
-    """
+    r"""
     Perform one step of the mirror descent update.
 
     From equation (4.5):
@@ -642,7 +642,7 @@ def run_learning_algorithm(
     *,
     params: Optional[ExperimentParams] = None
 ) -> Experiment:
-    """
+    r"""
     Run the complete learning algorithm from Section 4.2.
 
     This implements the first-order optimization algorithm:
@@ -862,7 +862,7 @@ def compute_experimentation_cost(
     mu: float,
     allocation: AllocationFunction
 ) -> float:
-    """
+    r"""
     Compute the cost of experimentation (Theorem 9).
 
     The excess cost from randomization is $O(\zeta^2)$ as shown in Theorem 9.
@@ -908,7 +908,7 @@ def compute_experimentation_cost(
 # =============================================================================
 
 def compute_optimal_zeta(n: int, alpha: float = 0.3) -> float:
-    """
+    r"""
     Compute optimal perturbation magnitude $\zeta_n$.
 
     From Theorem 6, perturbations should scale as $\zeta_n = \zeta \cdot n^{-\alpha}$
@@ -934,7 +934,7 @@ def analyze_convergence(
     result: LearningResult,
     p_optimal: float
 ) -> dict:
-    """
+    r"""
     Analyze convergence of the learning algorithm.
     
     Parameters

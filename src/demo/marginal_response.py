@@ -1,4 +1,4 @@
-"""
+r"""
 The Marginal Response Function
 
 This module implements Section 3.2 of Wager & Xu (2021)
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class MarginalResponseAnalysis:
-    """
+    r"""
     Analysis of the marginal response function and interference effects.
 
     From Section 3.2, this captures:
@@ -69,7 +69,7 @@ def compute_marginal_response(
     private_features: PrivateFeatureDistribution,
     n_monte_carlo: int = 10000
 ) -> float:
-    """
+    r"""
     Compute the marginal response function $\Delta_a(p)$.
 
     From Definition 9 (Equation 3.17 and its limit 3.19):
@@ -119,7 +119,7 @@ def compute_supply_gradient(
     delta: float,
     allocation: AllocationFunction
 ) -> float:
-    """
+    r"""
     Compute the actual supply gradient $d\mu_a(p)/dp$ using Lemma 4.
 
     From Equation 3.20:
@@ -181,7 +181,7 @@ def analyze_marginal_response(
     allocation: AllocationFunction,
     n_monte_carlo: int = 10000
 ) -> MarginalResponseAnalysis:
-    """
+    r"""
     Comprehensive analysis of the marginal response function.
 
     This implements Section 3.2, computing:

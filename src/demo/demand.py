@@ -1,9 +1,9 @@
-"""
+r"""
 Demand Model for Stochastic Market
 
 The demand D is drawn conditionally on a global state A.
 Key properties (equations 3.1 and 3.2):
-- E[D/n | A=a] = d_a (expected demand per supplier)
+- $E[D/n | A=a] = d_a$ (expected demand per supplier)
 - Var(D/n | A=a) → 0 as n → ∞ (concentration)
 - Extreme deviations are exponentially unlikely (tail property)
 """
@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 @dataclass
 class GlobalState:
-    """
+    r"""
     Represents a global state A that affects demand.
     
     Attributes:
@@ -30,7 +30,7 @@ class GlobalState:
 
 @dataclass
 class DemandParameters:
-    """
+    r"""
     Configuration for demand generation.
 
     Attributes:
@@ -42,7 +42,7 @@ class DemandParameters:
 
 
 def normalize_probabilities(states: Dict[str, GlobalState]) -> Dict[str, float]:
-    """Calculate normalized probabilities for all states."""
+    r"""Calculate normalized probabilities for all states."""
     state_names = list(states.keys())
     probs = np.array([states[s].probability for s in state_names])
     total = probs.sum()
@@ -53,7 +53,7 @@ def sample_state(
     model: DemandParameters,
     rng: np.random.Generator | None = None
 ) -> GlobalState:
-    """Sample a global state A according to the state probabilities."""
+    r"""Sample a global state A according to the state probabilities."""
     if rng is None:
         rng = np.random.default_rng()
 
@@ -66,7 +66,7 @@ def sample_state(
 
 
 def calculate_beta_params(d_a: float, k: float) -> Tuple[float, float]:
-    """Calculate Beta distribution parameters for given mean and concentration."""
+    r"""Calculate Beta distribution parameters for given mean and concentration."""
     alpha = k * d_a
     beta = k * (1 - d_a)
     return alpha, beta
@@ -78,12 +78,12 @@ def sample_demand(
     n: int,
     rng: np.random.Generator | None = None
 ) -> int:
-    """
+    r"""
     Sample demand D given global state and market size.
     
     The demand satisfies:
-    - E[D/n | A=a] = d_a
-    - D/n concentrates on d_a as n → ∞
+    - $E[D/n | A=a] = d_a$
+    - $D/n$ concentrates on d_a as $n \rightarrow \infty`
 
     Uses a Beta distribution scaled to have mean n * d_a and 
     variance that decreases with n (satisfying concentration property 3.1).
@@ -110,5 +110,5 @@ def sample_demand(
 
 
 def expected_demand(state: GlobalState, n: int) -> float:
-    """Return expected demand E[D | A=state] = n * d_a"""
+    r"""Return expected demand E[D | A=state] = n * d_a"""
     return n * state.d_a

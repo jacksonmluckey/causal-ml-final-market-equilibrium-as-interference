@@ -1,4 +1,4 @@
-"""
+r"""
 Platform Utility Computation
 
 This module implements the platform's utility functions.
@@ -21,7 +21,7 @@ def compute_platform_utility(
     mu: float,
     p: float
 ) -> float:
-    """
+    r"""
     Compute mean-field utility given activation rate $\mu$.
 
     $u_a(p) = (r(d_a/\mu) - p \cdot \omega(d_a/\mu)) \cdot \mu$
@@ -57,7 +57,7 @@ def compute_platform_utility_derivative(
     mu_prime: float,
     p: float
 ) -> float:
-    """
+    r"""
     Compute derivative of utility with respect to payment p.
 
     $du/dp = \mu'(p) \cdot [r(d_a/\mu) - p \cdot \omega(d_a/\mu) - (r'(d_a/\mu) - p \cdot \omega'(d_a/\mu)) \cdot d_a/\mu] - \omega(d_a/\mu) \cdot \mu$

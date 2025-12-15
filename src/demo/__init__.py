@@ -1,4 +1,4 @@
-"""
+r"""
 Stochastic Market Model
 
 Implementation of the model from:

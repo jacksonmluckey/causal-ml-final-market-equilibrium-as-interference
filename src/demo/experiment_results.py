@@ -1,4 +1,4 @@
-"""
+r"""
 Unified data structures for local and global experimentation.
 
 This module provides a single set of dataclasses for storing experiment
@@ -18,7 +18,7 @@ from .supplier import SupplierParameters
 
 @dataclass
 class TimePointData:
-    """
+    r"""
     Data from a single time period.
 
     Works for both local and global experimentation. Local-specific fields
@@ -69,19 +69,19 @@ class TimePointData:
 
     @property
     def D_bar(self) -> float:
-        """Scaled demand $\bar{D} = D/n$ (requires n from context)"""
+        r"""Scaled demand $\bar{D} = D/n$ (requires n from context)"""
         # This will be computed in DataFrame conversion
         raise NotImplementedError("Use n from experiment params")
 
     @property
     def Z_bar(self) -> float:
-        """Scaled active supply $\bar{Z} = T/n$ (requires n from context)"""
+        r"""Scaled active supply $\bar{Z} = T/n$ (requires n from context)"""
         raise NotImplementedError("Use n from experiment params")
 
 
 @dataclass
 class ExperimentParams:
-    """
+    r"""
     Parameters for running an experiment.
 
     Attributes
@@ -135,18 +135,18 @@ class ExperimentParams:
 
     @property
     def d_a(self) -> Optional[float]:
-        """Get d_a if using fixed demand, else None"""
+        r"""Get d_a if using fixed demand, else None"""
         return self.demand if isinstance(self.demand, float) else None
 
     @property
     def demand_params(self) -> Optional[DemandParameters]:
-        """Get DemandParameters if using full model, else None"""
+        r"""Get DemandParameters if using full model, else None"""
         return self.demand if isinstance(self.demand, DemandParameters) else None
 
 
 @dataclass
 class ExperimentResults:
-    """
+    r"""
     Results from running an experiment.
 
     Attributes
@@ -180,7 +180,7 @@ class ExperimentResults:
 
 @dataclass
 class Experiment:
-    """
+    r"""
     Complete experiment with parameters and results.
 
     Attributes
@@ -194,7 +194,7 @@ class Experiment:
     results: ExperimentResults
 
     def to_polars(self) -> pl.DataFrame:
-        """
+        r"""
         Convert experiment to Polars DataFrame.
 
         Returns
@@ -211,7 +211,7 @@ class Experiment:
         return experiment_to_dataframe(self)
 
     def compute_regret(self, p_optimal: float) -> List[float]:
-        """
+        r"""
         Compute cumulative regret against optimal payment.
 
         Parameters
@@ -229,7 +229,7 @@ class Experiment:
         return regret
 
     def convergence_analysis(self, p_optimal: float) -> dict:
-        """
+        r"""
         Analyze convergence properties.
 
         Parameters
@@ -253,7 +253,7 @@ class Experiment:
 # =============================================================================
 
 def experiment_to_dataframe(experiment: Experiment) -> pl.DataFrame:
-    """
+    r"""
     Convert Experiment to Polars DataFrame.
 
     Parameters
@@ -316,7 +316,7 @@ def compare_experiments(
     global_: Experiment,
     p_optimal: Optional[float] = None
 ) -> pl.DataFrame:
-    """
+    r"""
     Create comparison DataFrame for local vs global experiments.
 
     Parameters
@@ -352,7 +352,7 @@ def compute_cumulative_regret(
     experiment: Experiment,
     p_optimal: float
 ) -> List[float]:
-    """
+    r"""
     Compute cumulative regret over time.
 
     Regret at time t is defined as the cumulative squared error:
@@ -380,7 +380,7 @@ def analyze_convergence(
     experiment: Experiment,
     p_optimal: float
 ) -> dict:
-    """
+    r"""
     Analyze convergence properties of the learning algorithm.
 
     Parameters

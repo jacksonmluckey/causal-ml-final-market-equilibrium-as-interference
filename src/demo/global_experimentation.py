@@ -1,4 +1,4 @@
-"""
+r"""
 Global Experimentation (Bandit Baseline)
 
 Section 4.4 of Wager & Xu (2021): Comparison with global experimentation.
@@ -39,7 +39,7 @@ def run_global_experiment(
     state: Optional[GlobalState] = None,
     rng: Optional[np.random.Generator] = None
 ) -> TimePointData:
-    """
+    r"""
     Run one period of global experimentation.
 
     All suppliers receive the SAME payment p (no perturbations).
@@ -176,7 +176,7 @@ def run_global_learning(
     *,
     params: Optional[ExperimentParams] = None
 ) -> Experiment:
-    """
+    r"""
     Run global experimentation using finite-difference gradient estimates.
 
     Uses Kiefer-Wolfowitz style stochastic approximation:
@@ -377,7 +377,7 @@ def _compute_realized_utility(
     state: Optional[GlobalState],
     rng: np.random.Generator
 ) -> float:
-    """Helper to compute realized utility for a single experiment."""
+    r"""Helper to compute realized utility for a single experiment."""
     from .find_equilibrium import find_equilibrium_supply_mu
     
     mu_eq = find_equilibrium_supply_mu(

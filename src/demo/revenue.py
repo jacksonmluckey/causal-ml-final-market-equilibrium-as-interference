@@ -1,4 +1,4 @@
-"""
+r"""
 Revenue Functions for Stochastic Market
 
 This module implements the platform's revenue function.
@@ -22,7 +22,7 @@ from .allocation import (
 
 @dataclass
 class RevenueFunction:
-    """
+    r"""
     Platform revenue function.
 
     $R(d, t) = r(d/t) \cdot t$
@@ -44,7 +44,7 @@ class RevenueFunction:
 
 
 def create_linear_revenue(gamma: float, allocation: AllocationFunction) -> RevenueFunction:
-    """
+    r"""
     Create linear revenue function.
 
     Linear revenue: platform gets $\gamma$ per unit of demand served.
@@ -66,11 +66,11 @@ def create_linear_revenue(gamma: float, allocation: AllocationFunction) -> Reven
         The linear revenue function
     """
     def r(x: float) -> float:
-        """$r(x) = \gamma \cdot \omega(x)$"""
+        r"""$r(x) = \gamma \cdot \omega(x)$"""
         return gamma * allocation(x)
 
     def r_prime(x: float) -> float:
-        """$dr/dx = \gamma \cdot \omega'(x)$"""
+        r"""$dr/dx = \gamma \cdot \omega'(x)$"""
         return gamma * allocation.derivative(x)
 
     return RevenueFunction(

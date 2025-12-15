@@ -1,4 +1,4 @@
-"""
+r"""
 Equilibrium Finding Utilities
 
 This module implements Section 3.1 (Mean-Field Asymptotics) of Wager & Xu (2021)
@@ -28,7 +28,7 @@ from .allocation import (
 
 @dataclass
 class MeanFieldEquilibrium:
-    """
+    r"""
     Mean-field equilibrium of the marketplace.
 
     This implements the limiting equilibrium from Lemma 2, where
@@ -65,7 +65,7 @@ def find_equilibrium_supply_mu(
     tol: float = 1e-8,
     n_samples: int = 10000
 ) -> float:
-    """
+    r"""
     Solve for equilibrium supply fraction $\mu_a(p)$.
 
     From Lemma 2, $\mu_a(p)$ is the unique solution to the fixed-point equation:
@@ -103,7 +103,7 @@ def find_equilibrium_supply_mu(
     - The negative feedback ensures a unique fixed point
     """
     def fixed_point_residual(mu: float) -> float:
-        """$g(\mu) = \mu - E[f_{B_1}(p \cdot \omega(d_a/\mu))]$"""
+        r"""$g(\mu) = \mu - E[f_{B_1}(p \cdot \omega(d_a/\mu))]$"""
         x = d_a / mu  # demand-to-supply ratio
         q = allocation(x)  # allocation per supplier
         expected_revenue = p * q
@@ -142,7 +142,7 @@ def compute_mean_field_equilibrium(
     private_features: PrivateFeatureDistribution,
     allocation: AllocationFunction
 ) -> MeanFieldEquilibrium:
-    """
+    r"""
     Compute the mean-field equilibrium for payment p.
 
     This implements Lemma 2, computing all key equilibrium quantities:

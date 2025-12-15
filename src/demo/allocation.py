@@ -1,4 +1,4 @@
-"""
+r"""
 Allocation Function for Stochastic Market
 
 This module implements the regular allocation function $\omega(x)$ and the
@@ -25,7 +25,7 @@ from .utils import numerical_derivative
 
 @dataclass
 class AllocationFunction:
-    """
+    r"""
     Regular allocation function $\omega(x)$ as defined in Definition 5.
 
     The allocation function captures how much demand each active
@@ -46,18 +46,18 @@ class AllocationFunction:
     name: str = "Generic"
 
     def __call__(self, x: float) -> float:
-        """Evaluate $\omega(x)$."""
+        r"""Evaluate $\omega(x)$."""
         return self.omega(x)
 
     def derivative(self, x: float) -> float:
-        """Evaluate $\omega'(x)$."""
+        r"""Evaluate $\omega'(x)$."""
         if self.omega_prime is not None:
             return self.omega_prime(x)
         return numerical_derivative(self.omega, x)
 
 
 def create_queue_allocation(L: int = 8) -> AllocationFunction:
-    """
+    r"""
     Create allocation function from Example 6: Parallel Finite-Capacity Queues.
 
     Each active supplier operates as an M/M/1 queue with capacity L.
@@ -84,7 +84,7 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
         raise ValueError("Queue capacity L must be at least 2")
 
     def omega(x: float) -> float:
-        """
+        r"""
         Allocation function for M/M/1 queue with capacity L.
 
         $\omega(x) = (x - x^L) / (1 - x^L)$
@@ -100,7 +100,7 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
         return (x - x_L) / (1 - x_L)
 
     def omega_prime(x: float) -> float:
-        """
+        r"""
         Derivative of $\omega(x)$.
 
         Using quotient rule on $\omega(x) = (x - x^L) / (1 - x^L)$
@@ -127,7 +127,7 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
 
 
 def create_linear_allocation() -> AllocationFunction:
-    """
+    r"""
     Create simple linear allocation: $\omega(x) = \min(x, 1)$ (limiting case as $L \to \infty$).
 
     Each supplier serves all their demand up to capacity 1.
@@ -154,7 +154,7 @@ def create_linear_allocation() -> AllocationFunction:
 
 
 def create_smooth_linear_allocation() -> AllocationFunction:
-    """
+    r"""
     Create smooth approximation to linear allocation.
 
     $\omega(x) = 1 - \exp(-x)$
@@ -186,7 +186,7 @@ def create_smooth_linear_allocation() -> AllocationFunction:
 
 
 def create_simple_allocation():
-    """
+    r"""
     Create a simple concave allocation function for testing.
 
     Uses $\omega(x) = x / (1 + x)$, which satisfies all properties in Definition 5:
@@ -214,7 +214,7 @@ def create_simple_allocation():
 
 
 def compute_expected_allocation(allocation: AllocationFunction, mu: float, d_a: float) -> float:
-    """
+    r"""
     Compute expected allocation given fraction of active suppliers.
 
     $q_a(\mu) = \omega(d_a / \mu)$
@@ -241,7 +241,7 @@ def compute_expected_allocation_derivative(
     mu: float,
     d_a: float
 ) -> float:
-    """
+    r"""
     Compute derivative of q with respect to $\mu$.
 
     $\frac{d}{d\mu} q_a(\mu) = -\omega'(d_a/\mu) \cdot d_a / \mu^2$
@@ -269,7 +269,7 @@ def compute_total_demand_served(
     d: float,
     t: float
 ) -> float:
-    """
+    r"""
     Compute total demand served across all active suppliers.
 
     Total served = $t \cdot \omega(d/t)$

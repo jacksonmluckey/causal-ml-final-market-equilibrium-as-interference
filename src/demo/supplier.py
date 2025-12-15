@@ -1,4 +1,4 @@
-"""
+r"""
 Supplier Choice Model for Stochastic Market
 
 This module implements the supplier decision-making process.
@@ -24,7 +24,7 @@ from .utils import numerical_derivative
 
 @dataclass
 class ChoiceFunction:
-    """
+    r"""
     Supplier choice function f_b(x) as described in Section 3 Assumption 2.
     
     The choice function maps expected revenue x to the probability of
@@ -49,7 +49,7 @@ class ChoiceFunction:
     name: str = "Generic"
     
     def __call__(self, x: float, b: float) -> float:
-        """
+        r"""
         Calculate choice probability given expected revenue x and private feature by
         evaluating f_b(x) = P(active | expected_revenue=x, private_feature=b).
         
@@ -63,7 +63,7 @@ class ChoiceFunction:
         return self.f(x, b)
     
     def derivative(self, x: float, b: float) -> float:
-        """
+        r"""
         Takes the derivative df/dx of choice function with respect to expected revenue.
         Evaluates $f'_b(x) = \partial f_b/\partial x$.
 
@@ -79,7 +79,7 @@ class ChoiceFunction:
 
 
 def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
-    """
+    r"""
     Create logistic choice function from Example 7.
 
     $P(Z_i = 1 | P_i, \pi, A) = 1 / (1 + \exp(-\alpha(P_i \cdot E[\Omega] - B_i)))$
@@ -102,7 +102,7 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
         The logistic choice function
     """
     def f(x: float, b: float) -> float:
-        """
+        r"""
         Logistic choice probability.
         $f_b(x) = 1 / (1 + \exp(-\alpha(x - b)))$
 
@@ -120,7 +120,7 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
             return exp_z / (1.0 + exp_z)
 
     def f_prime(x: float, b: float) -> float:
-        """
+        r"""
         Derivative of logistic choice function.
         $df/dx = \alpha \cdot f(x,b) \cdot (1 - f(x,b))$
         """
@@ -136,7 +136,7 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
 
 @dataclass
 class PrivateFeatureDistribution:
-    """
+    r"""
     Distribution of private features B_i.
 
     Captures heterogeneity across suppliers (e.g., outside options,
@@ -160,7 +160,7 @@ def create_lognormal_costs(
     log_std: float = 1.0,
     scale: float = 20.0
 ) -> PrivateFeatureDistribution:
-    """
+    r"""
     Create lognormal distribution for supplier costs.
 
     $\log(B_i / \text{scale}) \sim N(\text{log\_mean}, \text{log\_std}^2)$
@@ -189,7 +189,7 @@ def create_lognormal_costs(
 
 
 def create_uniform_costs(low: float = 5.0, high: float = 50.0) -> PrivateFeatureDistribution:
-    """
+    r"""
     Create uniform distribution for supplier costs.
 
     $B_i \sim \text{Uniform}(\text{low}, \text{high})$
@@ -209,7 +209,7 @@ def compute_expected_choice_probability(
     private_features: PrivateFeatureDistribution,
     n_samples: int = 10000
 ) -> float:
-    """
+    r"""
     Compute $E[f_B(x)]$ via Monte Carlo.
 
     This is the average probability of activation across all supplier types
@@ -242,7 +242,7 @@ def compute_expected_choice_derivative(
     private_features: PrivateFeatureDistribution,
     n_samples: int = 10000
 ) -> float:
-    """
+    r"""
     Compute $E[f'_B(x)]$ via Monte Carlo.
 
     Average sensitivity of activation to revenue changes.
@@ -270,7 +270,7 @@ def compute_expected_choice_derivative(
 
 @dataclass
 class SupplierParameters:
-    """
+    r"""
     Parameters defining the supplier population.
 
     Parameters
@@ -289,7 +289,7 @@ def compute_activation_probability(
     expected_revenue: float,
     n_monte_carlo: int
 ) -> float:
-    """
+    r"""
     Compute $\mu = E[f_B(\text{expected\_revenue})]$.
 
     This is the fraction of suppliers who become active when
@@ -321,7 +321,7 @@ def compute_activation_sensitivity(
     expected_revenue: float,
     n_monte_carlo: int
 ) -> float:
-    """
+    r"""
     Compute $E[f'_B(\text{expected\_revenue})]$.
 
     Measures how sensitive activation is to revenue changes.
@@ -355,7 +355,7 @@ def sample_supplier_activations(
     params: SupplierParameters,
     seed: Optional[int] = None
 ) -> np.ndarray:
-    """
+    r"""
     Sample activation decisions for n suppliers.
 
     Args
