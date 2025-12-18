@@ -75,9 +75,22 @@ from .marginal_response import (
     #analyze_payment_range,
 )
 
+from .experiment import (
+    ExperimentParams,
+    DemandConfig,
+    CurrentDemandState,
+    EquilibriumAllocation,
+    setup_rng,
+    extract_demand_from_params,
+    sample_current_state,
+    compute_equilibrium_allocation,
+    compute_weighted_average_payment,
+    build_experiment_results,
+    run_global_one_timepoint,
+)
+
 from .experiment_results import (
     TimePointData,
-    ExperimentParams,
     ExperimentResults,
     Experiment,
     experiment_to_dataframe,
@@ -102,9 +115,13 @@ from .local_experimentation import (
     compute_optimal_zeta,
 )
 
-from .global_experimentation import (
-    run_global_experiment,
-    run_global_learning,
+from .kiefer_wolfowitz_global_experimentation import (
+    run_kiefer_wolfowitz_global_learning,
+)
+
+from .baseline_global_experimentation import (
+    run_baseline_global_learning,
+    fit_utility_spline,
 )
 
 __all__ = [
@@ -134,8 +151,14 @@ __all__ = [
     'MarginalResponseAnalysis',
     'compute_marginal_response', 'compute_supply_gradient',
     'analyze_marginal_response',
+    # Experiment Setup & Helpers
+    'ExperimentParams',
+    'DemandConfig', 'CurrentDemandState', 'EquilibriumAllocation',
+    'setup_rng', 'extract_demand_from_params', 'sample_current_state',
+    'compute_equilibrium_allocation', 'compute_weighted_average_payment',
+    'build_experiment_results', 'run_global_one_timepoint',
     # Experiment Results
-    'TimePointData', 'ExperimentParams', 'ExperimentResults', 'Experiment',
+    'TimePointData', 'ExperimentResults', 'Experiment',
     'experiment_to_dataframe', 'compare_experiments', 'compute_cumulative_regret',
     'analyze_convergence',
     # Local Experimentation
@@ -146,5 +169,7 @@ __all__ = [
     'run_learning_algorithm', 'compute_experimentation_cost',
     'compute_optimal_zeta',
     # Global Experimentation
-    'run_global_experiment', 'run_global_learning',
+    'run_kiefer_wolfowitz_global_learning',
+    # Baseline Global Experimentation
+    'run_baseline_global_learning', 'fit_utility_spline',
 ]

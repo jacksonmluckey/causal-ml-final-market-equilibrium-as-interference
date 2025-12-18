@@ -15,6 +15,7 @@ from .demand import DemandParameters, GlobalState
 from .allocation import AllocationFunction
 from .supplier import SupplierParameters
 from .revenue import RevenueFunction
+from .experiment import ExperimentParams
 
 
 @dataclass
@@ -78,71 +79,6 @@ class TimePointData:
     def Z_bar(self) -> float:
         r"""Scaled active supply $\bar{Z} = T/n$ (requires n from context)"""
         raise NotImplementedError("Use n from experiment params")
-
-
-@dataclass
-class ExperimentParams:
-    r"""
-    Parameters for running an experiment.
-
-    Attributes
-    ----------
-    T : int
-        Number of time periods
-    n : int
-        Number of suppliers per period
-    p_init : float
-        Initial payment level
-    revenue_fn : RevenueFunction
-        Platform revenue function
-    p_bounds : Tuple[float, float]
-        Payment bounds [c_-, c_+]
-    allocation : AllocationFunction
-        The allocation function $\omega$
-    supplier_params : SupplierParameters
-        Supplier choice model parameters
-    demand : Union[float, DemandParameters]
-        Either fixed d_a (float) or full demand model (DemandParameters)
-    eta : float
-        Step size for optimization algorithm
-    experiment_type : str
-        Either "local" or "global"
-    zeta : Optional[float]
-        Base perturbation magnitude (local only)
-    alpha : Optional[float]
-        Zeta decay exponent for scaling $\zeta_n = \zeta \cdot n^{-\alpha}$ (local only)
-    delta : Optional[float]
-        Finite difference step size (global only)
-    rng_seed : Optional[int]
-        Random seed for reproducibility
-    store_detailed_data : bool
-        Whether to store individual-level data (Z_i, ε_i arrays)
-    """
-    T: int
-    n: int
-    p_init: float
-    revenue_fn: RevenueFunction
-    p_bounds: Tuple[float, float]
-    allocation: AllocationFunction
-    supplier_params: SupplierParameters
-    demand: Union[float, DemandParameters]
-    eta: float
-    experiment_type: str
-    zeta: Optional[float] = None
-    alpha: Optional[float] = 0.3
-    delta: Optional[float] = None
-    rng_seed: Optional[int] = None
-    store_detailed_data: bool = False
-
-    @property
-    def d_a(self) -> Optional[float]:
-        r"""Get d_a if using fixed demand, else None"""
-        return self.demand if isinstance(self.demand, float) else None
-
-    @property
-    def demand_params(self) -> Optional[DemandParameters]:
-        r"""Get DemandParameters if using full model, else None"""
-        return self.demand if isinstance(self.demand, DemandParameters) else None
 
 
 @dataclass

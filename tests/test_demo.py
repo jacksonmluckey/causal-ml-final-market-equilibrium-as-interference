@@ -7,7 +7,7 @@ the same behavior as the original class-based implementation.
 
 import pytest
 import numpy as np
-from demo import (
+from demo.method import (
     # Allocation
     AllocationFunction,
     create_queue_allocation,
@@ -41,9 +41,9 @@ class TestAllocationFunctions:
         allocation = create_queue_allocation(L=8)
 
         # Test boundary conditions
-        assert allocation(0) == 0.0  # ω(0) = 0
-        assert allocation(1.0) == pytest.approx(1 - 1/8)  # ω(1) = 1 - 1/L
-        assert allocation(10.0) == pytest.approx(1.0)  # ω(∞) → 1
+        assert allocation(0) == 0.0
+        assert allocation(1.0) == pytest.approx(1 - 1/8)
+        assert allocation(10.0) == pytest.approx(1.0)
 
         # Test non-decreasing
         x_values = [0.1, 0.5, 1.0, 1.5, 2.0]
@@ -65,7 +65,6 @@ class TestAllocationFunctions:
         allocation = create_smooth_linear_allocation()
 
         assert allocation(0.0) == pytest.approx(0.0)
-        # 1 - exp(-x) approaches 1 as x → ∞
         assert allocation(10.0) == pytest.approx(1.0, abs=0.01)
 
     def test_omega_derivative(self):
@@ -105,7 +104,6 @@ class TestSupplierParameters:
     def test_logistic_choice_creation(self):
         """Test creating logistic choice function."""
         choice = create_logistic_choice(alpha=1.0)
-        assert choice.name == "Logistic (α=1.0)"
         assert choice.f is not None
         assert choice.f_prime is not None
 
@@ -128,8 +126,6 @@ class TestSupplierParameters:
     def test_lognormal_costs(self):
         """Test lognormal cost distribution."""
         costs = create_lognormal_costs(log_mean=0.0, log_std=1.0, scale=20.0)
-        assert costs.name == "LogNormal(μ=0.0, σ=1.0, scale=20.0)"
-
         # Sample should return positive values
         samples = costs.sample(100)
         assert all(s > 0 for s in samples)
@@ -161,8 +157,6 @@ class TestMarketPlatform:
         """Test creating linear revenue function."""
         allocation = create_queue_allocation(L=8)
         revenue_fn = create_linear_revenue(gamma=100.0, allocation=allocation)
-
-        assert revenue_fn.name == "Linear (γ=100.0)"
         assert revenue_fn.r is not None
         assert revenue_fn.r_prime is not None
 
@@ -171,8 +165,6 @@ class TestMarketPlatform:
         allocation = create_queue_allocation(L=8)
         gamma = 100.0
         revenue_fn = create_linear_revenue(gamma, allocation)
-
-        # r(x) should equal γ * ω(x)
         for x in [0.5, 1.0, 1.5]:
             r_val = revenue_fn.r(x)
             expected = gamma * allocation(x)

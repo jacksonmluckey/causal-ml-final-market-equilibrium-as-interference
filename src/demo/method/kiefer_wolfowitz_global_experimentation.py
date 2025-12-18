@@ -1,11 +1,14 @@
 r"""
-Global Experimentation (Bandit Baseline)
+Global Experimentation using Kiefer-Wolfowitz Algorithm
 
 Section 4.4 of Wager & Xu (2021): Comparison with global experimentation.
 
 In global experimentation, each period t we choose a SINGLE payment $p_t$
 for all suppliers and observe aggregate utility $U_t$. This is a standard
 continuous-armed bandit problem.
+
+This implementation uses the Kiefer-Wolfowitz stochastic approximation algorithm
+for gradient estimation via finite differences.
 
 Key result (Shamir 2013): Even with strongly concave utility, no algorithm
 can achieve expected regret growing slower than $\sqrt{T}$. This gives $1/\sqrt{T}$ rate
@@ -22,120 +25,22 @@ from .supplier import SupplierParameters, sample_supplier_activations
 from .demand import DemandParameters, GlobalState, sample_state, sample_demand
 from .experiment_results import (
     TimePointData,
-    ExperimentParams,
     ExperimentResults,
     Experiment
 )
-
-
-def run_global_experiment(
-    n: int,
-    p: float,
-    revenue_fn: RevenueFunction,
-    allocation: AllocationFunction,
-    supplier_params: SupplierParameters,
-    t: int = 0,
-    d_a: Optional[float] = None,
-    demand_params: Optional[DemandParameters] = None,
-    state: Optional[GlobalState] = None,
-    rng: Optional[np.random.Generator] = None
-) -> TimePointData:
-    r"""
-    Run one period of global experimentation.
-
-    All suppliers receive the SAME payment p (no perturbations).
-
-    Parameters
-    ----------
-    n : int
-        Number of suppliers
-    p : float
-        Payment level for all suppliers
-    revenue_fn : RevenueFunction
-        Platform revenue function
-    allocation : AllocationFunction
-        The allocation function ω
-    supplier_params : SupplierParameters
-        Supplier behavior parameters
-    t : int
-        Time period (1-indexed)
-    d_a : Optional[float]
-        Expected demand per supplier (if not using demand_params)
-    demand_params : Optional[DemandParameters]
-        Demand model parameters
-    state : Optional[GlobalState]
-        Current global state
-    rng : Optional[np.random.Generator]
-        Random number generator
-
-    Returns
-    -------
-    TimePointData
-        Data from this experimental period (gradient fields set to None)
-    """
-    if rng is None:
-        rng = np.random.default_rng()
-    
-    # Compute equilibrium allocation
-    from .find_equilibrium import find_equilibrium_supply_mu
-    current_d_a = state.d_a if state else d_a
-    
-    mu_eq = find_equilibrium_supply_mu(
-        p=p,
-        d_a=current_d_a,
-        choice=supplier_params.choice,
-        private_features=supplier_params.private_features,
-        allocation=allocation
-    )
-    q_eq = allocation(current_d_a / mu_eq) if mu_eq > 0 else 0.0
-    
-    # All suppliers get same payment
-    payments = np.full(n, p)
-    
-    # Sample activations
-    internal_seed = int(rng.integers(0, 2**31))
-    Z = sample_supplier_activations(
-        n=n, payments=payments, expected_allocation=q_eq,
-        params=supplier_params, seed=internal_seed
-    )
-    T = int(Z.sum())
-    
-    # Sample demand
-    if demand_params is not None and state is not None:
-        D = sample_demand(demand_params, state, n, rng)
-    else:
-        D = int(round(n * current_d_a))
-    
-    # Compute realized utility
-    if T > 0:
-        x = D / T  # Demand per active supplier
-        actual_q = allocation(x)
-        S = T * actual_q
-        total_revenue = revenue_fn.r(x) * T
-        U = total_revenue - p * S
-    else:
-        S = 0.0
-        U = 0.0
-
-    return TimePointData(
-        t=t,
-        p=p,
-        D=D,
-        T=T,
-        S=S,
-        U=U,
-        state=state,
-        gradient_estimate=None,  # Not used in global
-        delta_hat=None,
-        upsilon_hat=None,
-        zeta=None,
-        epsilon=None,
-        Z=None
-    )
+from .experiment import (
+    ExperimentParams,
+    setup_rng,
+    extract_demand_from_params,
+    sample_current_state,
+    compute_equilibrium_allocation,
+    build_experiment_results,
+    run_global_one_timepoint
+)
 
 
 @overload
-def run_global_learning(
+def run_kiefer_wolfowitz_global_learning(
     *,
     params: ExperimentParams,
     rng: Optional[np.random.Generator] = None
@@ -143,7 +48,7 @@ def run_global_learning(
 
 
 @overload
-def run_global_learning(
+def run_kiefer_wolfowitz_global_learning(
     T: int,
     n: int,
     p_init: float,
@@ -162,7 +67,7 @@ def run_global_learning(
 ) -> Experiment: ...
 
 
-def run_global_learning(
+def run_kiefer_wolfowitz_global_learning(
     T: Optional[int] = None,
     n: Optional[int] = None,
     p_init: Optional[float] = None,
@@ -180,13 +85,14 @@ def run_global_learning(
     params: Optional[ExperimentParams] = None
 ) -> Experiment:
     r"""
-    Run global experimentation using finite-difference gradient estimates.
+    Run global experimentation using the Kiefer-Wolfowitz algorithm.
 
-    Uses Kiefer-Wolfowitz style stochastic approximation:
+    This implements the Kiefer-Wolfowitz stochastic approximation algorithm
+    for gradient estimation via finite differences:
         $p_{t+1} = p_t + \eta_t \cdot (U(p_t + \delta) - U(p_t - \delta)) / (2\delta)$
 
     With step sizes $\eta_t = \eta/t^{2/3}$ and perturbation $\delta_t = \delta/t^{1/3}$,
-    this achieves $O(T^{-1/3})$ convergence - worse than local's $O(T^{-1})$.
+    this achieves $O(T^{-1/3})$ convergence - worse than local experimentation's $O(T^{-1})$.
 
     Parameters
     ----------
@@ -225,8 +131,8 @@ def run_global_learning(
     Notes
     -----
     Can be called in two ways:
-    1. With ExperimentParams: run_global_learning(params=exp_params)
-    2. With individual parameters: run_global_learning(T=100, n=1000, ...)
+    1. With ExperimentParams: run_kiefer_wolfowitz_global_learning(params=exp_params)
+    2. With individual parameters: run_kiefer_wolfowitz_global_learning(T=100, n=1000, ...)
     """
     # Extract parameters from ExperimentParams if provided
     if params is not None:
@@ -242,12 +148,9 @@ def run_global_learning(
         rng_seed = params.rng_seed
 
         # Extract demand parameters
-        if isinstance(params.demand, DemandParameters):
-            demand_params = params.demand
-            d_a = None
-        else:
-            d_a = params.demand
-            demand_params = None
+        demand_config = extract_demand_from_params(params)
+        d_a = demand_config.d_a
+        demand_params = demand_config.demand_params
     else:
         # Validate that required parameters are provided
         if any(x is None for x in [T, n, p_init, eta, delta, revenue_fn, allocation, supplier_params]):
@@ -259,11 +162,7 @@ def run_global_learning(
             p_bounds = (0.0, float('inf'))
 
     # Setup RNG
-    if rng is None:
-        if rng_seed is not None:
-            rng = np.random.default_rng(rng_seed)
-        else:
-            rng = np.random.default_rng()
+    rng = setup_rng(rng, rng_seed)
 
     p_bounds = (float(p_bounds[0]), float(p_bounds[1]))
 
@@ -299,28 +198,18 @@ def run_global_learning(
         delta_t = delta / (t ** (1/3))
 
         # Sample state for this period
-        if demand_params is not None:
-            state = sample_state(demand_params, rng)
-            current_d_a = state.d_a
-        else:
-            state = None
+        current = sample_current_state(demand_params, d_a, rng)
+        state = current.state
+        current_d_a = current.d_a
 
-        # Two-point gradient estimate (Kiefer-Wolfowitz)
+        # Kiefer-Wolfowitz two-point finite difference gradient estimate
+        # Evaluate utility at p+δ and p-δ to estimate the gradient
         p_plus = np.clip(p + delta_t, p_bounds[0], p_bounds[1])
         p_minus = np.clip(p - delta_t, p_bounds[0], p_bounds[1])
 
         # Run experiments at p+ and p-
         # We'll store the experiment at the current p for this timepoint
-        mu_eq = find_equilibrium_supply_mu(
-            p=p,
-            d_a=current_d_a,
-            choice=supplier_params.choice,
-            private_features=supplier_params.private_features,
-            allocation=allocation
-        )
-        q_eq = allocation(current_d_a / mu_eq) if mu_eq > 0 else 0.0
-
-        timepoint = run_global_experiment(
+        timepoint = run_global_one_timepoint(
             n=n,
             p=p,
             revenue_fn=revenue_fn,
@@ -353,17 +242,10 @@ def run_global_learning(
         p = np.clip(p, p_bounds[0], p_bounds[1])
 
     # Build results
-    payments = [tp.p for tp in timepoints]
-    total_utility = sum(tp.U for tp in timepoints)
-    mean_utility = total_utility / T if T > 0 else 0.0
-
-    results = ExperimentResults(
-        final_payment=p,
-        weighted_average_payment=None,  # Not used for global
-        average_payment=float(np.mean(payments)),
+    results = build_experiment_results(
         timepoints=timepoints,
-        total_utility=total_utility,
-        mean_utility=mean_utility
+        final_payment=p,
+        weighted_average_payment=None  # Not used for global
     )
 
     return Experiment(params=params, results=results)
@@ -381,15 +263,8 @@ def _compute_realized_utility(
     rng: np.random.Generator
 ) -> float:
     r"""Helper to compute realized utility for a single experiment."""
-    from .find_equilibrium import find_equilibrium_supply_mu
-    
-    mu_eq = find_equilibrium_supply_mu(
-        p=p, d_a=d_a,
-        choice=supplier_params.choice,
-        private_features=supplier_params.private_features,
-        allocation=allocation
-    )
-    q_eq = allocation(d_a / mu_eq) if mu_eq > 0 else 0.0
+    eq = compute_equilibrium_allocation(p, d_a, supplier_params, allocation)
+    q_eq = eq.q_eq
     
     # Sample activations
     payments = np.full(n, p)

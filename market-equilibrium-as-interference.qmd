@@ -19,13 +19,18 @@ Standard causal inference methods assume that the potential outcomes of a unit a
 
 ## Experimenting in Market Equilibrium
 
-@wager_experimenting_2020 provides a method for finding the optimal price level $p^*$ from the perspective of the market platform by experimentation. $p^*$ is the price at which the difference between overall revenue and payments to suppliers is maximized. In the paper's setup, the market consists of suppliers that can choose to become active on any given day, at which point they will be randomly allocated demand. On each day:
+@wager_experimenting_2020 provides a method for efficient experimentation in a two-sided marketplace. In the paper's setup, the market consists of demand and a fixed pool of suppliers that can choose to become active on any given day. On each day:
 
-1. The platform chooses the payment policy $\pi$ and draws the supplier-level payments $P_i \sim \pi$.
-2. Each supplier learns the payment policy $\pi$ and their payment $P_i$ and decides whether to be active.
-3. The platform allocates demand to active suppliers.
+1. Demand per supplier $d_a$ is randomly sampled from a pool of global states $\mathbfcal{A}$.
+1. The platform chooses a payment policy $\pi$ and draws the supplier-level payments $p_i \sim \pi$.
+2. Each supplier learns the payment policy $\pi$ and their payment $p_i$ and decides whether to be active using their choice function $f_{B_i}$.
+3. The platform randomly allocates demand among active suppliers using the allocation function $\Omega$.
+
+In the simplest case, the platform receives $\gamma$ for each unit of demand served. The platform's utility is the sum of these payments minus the sum of the payments made to the suppliers. The goal of experimentation is to find the optimal payment $p^*$ at which the difference between overall revenue and payments to suppliers is maximized.
 
 The platform knows its own utility function ($R$ and $r$), the market allocation mechanism ($\Omega$ and $\omega$), and the payment scheme ($\pi$), but does not know the global state ($A$), demand ($D$), or supplier behavior ($f_{B_i}$) in advance.
+
+Suppliers know...
 
 The methodology simplifies the market equilibrium to three key statistics:
 

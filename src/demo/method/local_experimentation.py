@@ -40,9 +40,17 @@ from .demand import (
 )
 from .experiment_results import (
     TimePointData,
-    ExperimentParams,
     ExperimentResults,
     Experiment
+)
+from .experiment import (
+    ExperimentParams,
+    setup_rng,
+    extract_demand_from_params,
+    sample_current_state,
+    compute_equilibrium_allocation,
+    compute_weighted_average_payment,
+    build_experiment_results
 )
 
 
@@ -713,12 +721,9 @@ def run_learning_algorithm(
         rng_seed = params.rng_seed
 
         # Extract demand parameters
-        if isinstance(params.demand, DemandParameters):
-            demand_params = params.demand
-            d_a = None
-        else:
-            d_a = params.demand
-            demand_params = None
+        demand_config = extract_demand_from_params(params)
+        demand_params = demand_config.demand_params
+        d_a = demand_config.d_a
     else:
         # Validate that required parameters are provided
         if any(x is None for x in [T, n, p_init, eta, zeta, revenue_fn, allocation, supplier_params]):
@@ -730,11 +735,7 @@ def run_learning_algorithm(
             p_bounds = (0.0, float('inf'))
 
     # Setup RNG
-    if rng is None:
-        if rng_seed is not None:
-            rng = np.random.default_rng(rng_seed)
-        else:
-            rng = np.random.default_rng()
+    rng = setup_rng(rng, rng_seed)
 
     if d_a is None and demand_params is None:
         raise ValueError("Must provide either d_a or demand_params")
@@ -771,22 +772,18 @@ def run_learning_algorithm(
             print(f"  Period {t}/{T}: p = {opt_state.p:.4f}")
 
         # Sample global state A_t for this period
-        if demand_params is not None:
-            current_state = sample_state(demand_params, rng)
-            current_d_a = current_state.d_a
-        else:
-            current_state = None
-            current_d_a = d_a
+        current = sample_current_state(demand_params, d_a, rng)
+        current_state = current.state
+        current_d_a = current.d_a
 
         # Compute expected allocation at current payment for this state
-        mu_eq = find_equilibrium_supply_mu(
+        eq = compute_equilibrium_allocation(
             p=opt_state.p,
             d_a=current_d_a,
-            choice=supplier_params.choice,
-            private_features=supplier_params.private_features,
+            supplier_params=supplier_params,
             allocation=allocation
         )
-        q_eq = allocation(current_d_a / mu_eq) if mu_eq > 0 else 0.0
+        q_eq = eq.q_eq
 
         # Run local experiment for this period
         timepoint = run_local_experiment(
@@ -824,22 +821,13 @@ def run_learning_algorithm(
         )
 
     # Compute weighted average (Corollary 8)
-    payments = [tp.p for tp in timepoints]
-    weights = np.arange(1, T + 1)
-    weight_sum = T * (T + 1) / 2
-    weighted_avg = float(np.sum(weights * np.array(payments)) / weight_sum)
+    weighted_avg = compute_weighted_average_payment(timepoints)
 
     # Build results
-    total_utility = sum(tp.U for tp in timepoints)
-    mean_utility = total_utility / T if T > 0 else 0.0
-
-    results = ExperimentResults(
-        final_payment=opt_state.p,
-        weighted_average_payment=weighted_avg,
-        average_payment=float(np.mean(payments)),
+    results = build_experiment_results(
         timepoints=timepoints,
-        total_utility=total_utility,
-        mean_utility=mean_utility
+        final_payment=opt_state.p,
+        weighted_average_payment=weighted_avg
     )
 
     return Experiment(params=params, results=results)

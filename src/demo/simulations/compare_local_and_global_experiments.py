@@ -6,7 +6,7 @@ from demo.method import (
     create_queue_allocation,
     create_linear_revenue,
     run_learning_algorithm,
-    run_global_learning,
+    run_kiefer_wolfowitz_global_learning,
     # TODO will need to calculate true p^* first.
     #compute_cumulative_regret,
     DemandParameters,
@@ -41,7 +41,7 @@ allocation = create_queue_allocation(L = 8)
 
 rng = np.random.default_rng(seed=20251215)
 
-n_days = 200
+n_days = 250
 n_suppliers = 100
 gamma = 100
 
@@ -77,7 +77,7 @@ global_params = ExperimentParams(
     allocation=allocation,
     supplier_params=supplier,
     demand=demand,
-    eta=20,
+    eta=1,
     experiment_type="global",
     zeta=None,
     alpha=None,
@@ -91,8 +91,8 @@ if __name__ == "__main__":
     print("Running local experimentation...")
     local_exp = run_learning_algorithm(params=local_params, rng=rng)
 
-    print("Running global experimentation...")
-    global_exp = run_global_learning(params=global_params, rng=rng)
+    print("Running Kiefer-Wolfowitz global experimentation...")
+    global_exp = run_kiefer_wolfowitz_global_learning(params=global_params, rng=rng)
 
     local_df = local_exp.to_polars().with_columns(pl.lit('local').alias('experimentation'))
     global_df = global_exp.to_polars().with_columns(pl.lit('global').alias('experimentation'))
