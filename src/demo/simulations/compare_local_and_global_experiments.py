@@ -7,6 +7,8 @@ from demo.method import (
     create_linear_revenue,
     run_learning_algorithm,
     run_global_learning,
+    # TODO will need to calculate true p^* first.
+    #compute_cumulative_regret,
     DemandParameters,
     GlobalState,
 )
