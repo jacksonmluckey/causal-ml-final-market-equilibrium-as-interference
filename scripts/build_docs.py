@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 """
-Build documentation for the demo package.
+Build documentation for the demo package using MkDocs.
 Can be run locally or in CI/CD.
 
 Usage:
@@ -8,17 +7,19 @@ Usage:
 """
 
 import shutil
-import subprocess
 from pathlib import Path
 
+from mkdocs.commands.build import build
+from mkdocs.config import load_config
 
-def generate_module_docs(src_dir: Path, modules_dir: Path) -> list[str]:
+
+def generate_module_docs(src_dir: Path, api_dir: Path) -> list[str]:
     """
-    Generate .rst files for all Python modules in src/demo/.
+    Generate Markdown files for all Python modules in src/demo/.
 
     Args:
         src_dir: Path to src/demo/ directory
-        modules_dir: Path to docs/modules/ directory
+        api_dir: Path to docsrc/api/ directory
 
     Returns:
         List of module names (without .py extension)
@@ -32,105 +33,82 @@ def generate_module_docs(src_dir: Path, modules_dir: Path) -> list[str]:
         if f.stem != "__init__" and not f.stem.startswith("_")
     ]
 
-    print(f"Found {len(modules)} modules: {', '.join(modules)}")
+    # Create api directory if it doesn't exist
+    api_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create modules directory if it doesn't exist
-    modules_dir.mkdir(parents=True, exist_ok=True)
-
-    # Generate .rst file for each module
+    # Generate .md file for each module
     for module_name in modules:
-        rst_file = modules_dir / f"{module_name}.rst"
+        md_file = api_dir / f"{module_name}.md"
 
         # Create human-readable title from module name
         title = module_name.replace("_", " ").title()
-        title_underline = "=" * len(title)
 
-        rst_content = f"""{title}
-{title_underline}
+        md_content = f"""# {title}
 
-.. automodule:: demo.{module_name}
-   :members:
-   :undoc-members:
-   :show-inheritance:
+::: demo.{module_name}
 """
 
-        rst_file.write_text(rst_content)
-        print(f"  Generated {rst_file.relative_to(modules_dir.parent)}")
+        md_file.write_text(md_content)
+        print(f"  Generated {md_file.relative_to(api_dir.parent)}")
 
     return modules
 
 
-def update_index_toctree(docs_dir: Path, modules: list[str]) -> None:
+def generate_mkdocs_config(project_root: Path, modules: list[str]) -> None:
     """
-    Update the toctree in index.rst with all modules.
+    Generate mkdocs.yml configuration file from template.
 
     Args:
-        docs_dir: Path to docs/ directory
+        project_root: Path to project root directory
         modules: List of module names
     """
-    index_file = docs_dir / "index.rst"
+    template_file = project_root / "docsrc" / "mkdocs_config.yml"
+    config_file = project_root / "docsrc" / "mkdocs.yml"
 
-    # Build toctree entries
-    toctree_entries = "\n   ".join(f"modules/{mod}" for mod in sorted(modules))
+    # Read template
+    template_content = template_file.read_text()
 
-    toctree_section = f"""API Reference
--------------
+    # Build navigation structure
+    nav_items = []
+    for module_name in sorted(modules):
+        title = module_name.replace("_", " ").title()
+        nav_items.append(f"      - {title}: api/{module_name}.md")
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    nav_section = "\n".join(nav_items)
 
-   {toctree_entries}"""
+    # Replace placeholder with generated navigation
+    config_content = template_content.replace("{{NAV_ITEMS}}", nav_section)
 
-    # Read current index
-    content = index_file.read_text()
-
-    # Replace the API Reference section
-    import re
-    pattern = r"API Reference\n-+\n\n\.\.  toctree::.*?(?=\n\n[A-Z]|\Z)"
-
-    if re.search(pattern, content, re.DOTALL):
-        new_content = re.sub(pattern, toctree_section, content, flags=re.DOTALL)
-        index_file.write_text(new_content)
-        print(f"Updated {index_file.relative_to(docs_dir.parent)}")
-    else:
-        print(f"Warning: Could not find API Reference section in {index_file}")
+    config_file.write_text(config_content)
+    print(f"Generated {config_file.name}")
 
 
 def main():
-    """Build Sphinx documentation."""
+    """Build MkDocs documentation."""
     # Get project root
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
-    docs_dir = project_root / "docs"
-    modules_dir = docs_dir / "modules"
-    build_dir = docs_dir / "_build"
+    docsrc_dir = project_root / "docsrc"
+    api_dir = docsrc_dir / "api"
+    site_dir = project_root / "docs"
     src_dir = project_root / "src" / "demo"
 
-    print("Generating documentation...")
-
     # Generate module documentation files
-    print("\nGenerating module .rst files...")
-    modules = generate_module_docs(src_dir, modules_dir)
+    modules = generate_module_docs(src_dir, api_dir)
 
-    # Update index.rst with all modules
-    print("\nUpdating index.rst...")
-    update_index_toctree(docs_dir, modules)
+    # Generate mkdocs.yml configuration
+    # This allows for automatically discovering the modules in src/demo/
+    generate_mkdocs_config(project_root, modules)
 
     # Clean previous build
-    if build_dir.exists():
-        print(f"\nCleaning {build_dir}")
-        shutil.rmtree(build_dir)
+    if site_dir.exists():
+        shutil.rmtree(site_dir)
 
-    # Build HTML documentation
-    print("\nRunning Sphinx build...")
-    subprocess.run(
-        ["python", "-m", "sphinx", "-b", "html", str(docs_dir), str(build_dir)],
-        check=True,
-    )
+    # Build HTML documentation using MkDocs library
+    config = load_config(config_file=str(project_root / "mkdocs.yml"))
+    build(config)
 
-    print("\nDocumentation built successfully!")
-    print(f"Open {build_dir / 'index.html'} to view")
+    print(f"Open {site_dir / 'index.html'} to view the generated docs")
 
 
 if __name__ == "__main__":

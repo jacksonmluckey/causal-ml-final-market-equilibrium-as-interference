@@ -41,7 +41,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
-          path: docs/_build
+          path: docs
 
   deploy-docs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
