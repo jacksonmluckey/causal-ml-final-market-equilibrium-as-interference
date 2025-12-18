@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Polygon
 import numpy as np
 from matplotlib.lines import Line2D
-from utils import get_figures_path
+from demo.utils import get_figures_path
 
 # Color constants
 DIRECT_COLOR = '#4169E1'  # Blue for direct connections

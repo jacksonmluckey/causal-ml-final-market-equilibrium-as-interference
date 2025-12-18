@@ -1,10 +1,13 @@
-from demo.find_equilibrium import compute_mean_field_equilibrium
-from demo.allocation import create_queue_allocation
-from demo.supplier import create_lognormal_costs, create_logistic_choice
+from demo.method import (
+    compute_mean_field_equilibrium,
+    create_queue_allocation,
+    create_lognormal_costs,
+    create_logistic_choice
+)
 import polars as pl
 import plotnine as gg
 import matplotlib.pyplot as plt
-from utils import get_figures_path
+from demo.utils import get_figures_path
 
 
 d_a = 0.4

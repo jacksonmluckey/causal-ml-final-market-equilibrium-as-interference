@@ -1,4 +1,4 @@
-from demo import (
+from demo.method import (
    create_queue_allocation,
    create_linear_revenue,
    create_logistic_choice,

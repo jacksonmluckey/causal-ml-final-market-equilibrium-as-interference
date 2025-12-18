@@ -1,4 +1,5 @@
-from demo import (
+from demo.method import (
+    Experiment,
     ExperimentParams,
     SupplierParameters,
     create_logistic_choice,
@@ -8,8 +9,6 @@ from demo import (
     GlobalState
 )
 import numpy as np
-
-from demo.experiment_results import Experiment
 
 
 supplier = SupplierParameters(

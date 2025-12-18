@@ -1,6 +1,9 @@
-from demo.find_equilibrium import compute_mean_field_equilibrium
-from demo.allocation import create_queue_allocation
-from demo.supplier import create_lognormal_costs, create_logistic_choice
+from demo.method import (
+    create_queue_allocation,
+    create_lognormal_costs,
+    create_logistic_choice,
+    compute_mean_field_equilibrium
+)
 import polars as pl
 from itertools import product
 from concurrent.futures import ProcessPoolExecutor
