@@ -24,6 +24,9 @@ __all__ = [
     # Revenue
     'RevenueFunction',
     'create_linear_revenue',
+    # Platform Utility
+    'compute_platform_utility', 'compute_platform_utility_derivative',
+    'compute_realized_utility',
     # Equilibrium
     'MeanFieldEquilibrium',
     'find_equilibrium_supply_mu', 'compute_mean_field_equilibrium',

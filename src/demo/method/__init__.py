@@ -57,7 +57,8 @@ from .revenue import (
 
 from .platform_utility import (
     compute_platform_utility,
-    compute_platform_utility_derivative
+    compute_platform_utility_derivative,
+    compute_realized_utility
 )
 
 from .find_equilibrium import (
@@ -144,6 +145,9 @@ __all__ = [
     # Revenue
     'RevenueFunction',
     'create_linear_revenue',
+    # Platform Utility
+    'compute_platform_utility', 'compute_platform_utility_derivative',
+    'compute_realized_utility',
     # Equilibrium
     'MeanFieldEquilibrium',
     'find_equilibrium_supply_mu', 'compute_mean_field_equilibrium',

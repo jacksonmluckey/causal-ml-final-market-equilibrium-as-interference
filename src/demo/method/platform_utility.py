@@ -92,3 +92,52 @@ def compute_platform_utility_derivative(
     direct_term = -omega_val * mu
 
     return mu_contribution + direct_term
+
+
+def compute_realized_utility(
+    D: int,
+    T: int,
+    p: float,
+    revenue_fn: RevenueFunction,
+    allocation: AllocationFunction,
+    n: int
+) -> float:
+    r"""
+    Compute realized utility from experimental observations.
+
+    Uses realized demand D and active suppliers T to compute total utility:
+    $U = T \cdot (r(D/T) - p \cdot \omega(D/T))$
+
+    This is equivalent to n * compute_platform_utility with:
+    - d_a = D/n (realized demand per supplier)
+    - mu = T/n (realized activation rate)
+
+    Args:
+        D: Realized total demand
+        T: Number of active suppliers
+        p: Payment per unit of demand served
+        revenue_fn: Platform revenue function
+        allocation: Allocation function
+        n: Total number of suppliers
+
+    Returns:
+        Total realized utility
+    """
+    if T == 0:
+        return 0.0
+
+    # Convert realized values to normalized form
+    mu = T / n  # Realized activation rate
+    d_a = D / n  # Realized demand per supplier
+
+    # Compute normalized utility
+    normalized_utility = compute_platform_utility(
+        revenue_fn=revenue_fn,
+        allocation=allocation,
+        d_a=d_a,
+        mu=mu,
+        p=p
+    )
+
+    # Scale to total utility
+    return n * normalized_utility

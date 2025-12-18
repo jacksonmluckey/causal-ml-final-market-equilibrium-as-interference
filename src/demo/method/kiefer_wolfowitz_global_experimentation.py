@@ -21,6 +21,7 @@ from typing import Optional, List, Tuple, overload
 
 from .allocation import AllocationFunction
 from .revenue import RevenueFunction
+from .platform_utility import compute_realized_utility
 from .supplier import SupplierParameters, sample_supplier_activations
 from .demand import DemandParameters, GlobalState, sample_state, sample_demand
 from .experiment_results import (
@@ -282,10 +283,4 @@ def _compute_realized_utility(
         D = int(round(n * d_a))
     
     # Compute utility
-    if T > 0:
-        x = D / T
-        S = T * allocation(x)
-        total_revenue = revenue_fn.r(x) * T
-        return total_revenue - p * S
-    else:
-        return 0.0
+    return compute_realized_utility(D, T, p, revenue_fn, allocation, n)

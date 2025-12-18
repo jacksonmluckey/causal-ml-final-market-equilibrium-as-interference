@@ -25,6 +25,7 @@ from typing import Optional, Tuple, List, Callable, Union, overload
 
 from .allocation import AllocationFunction
 from .revenue import RevenueFunction
+from .platform_utility import compute_realized_utility
 from .supplier import (
     ChoiceFunction,
     PrivateFeatureDistribution,
@@ -196,10 +197,8 @@ def run_local_experiment(
     # Step 5: Compute demand served and utility
     if T > 0:
         x = D / T  # Demand per active supplier
-        actual_q = allocation(x)
-        S = T * actual_q
-        total_revenue = revenue_fn.r(x) * T
-        U = total_revenue - p * S
+        S = T * allocation(x)
+        U = compute_realized_utility(D, T, p, revenue_fn, allocation, n)
     else:
         S = 0.0
         U = 0.0

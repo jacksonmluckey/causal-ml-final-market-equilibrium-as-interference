@@ -18,6 +18,7 @@ from .allocation import AllocationFunction
 from .supplier import SupplierParameters, sample_supplier_activations
 from .revenue import RevenueFunction
 from .find_equilibrium import find_equilibrium_supply_mu
+from .platform_utility import compute_realized_utility
 
 
 # Forward reference for type hints (experiment_results imports from us)
@@ -441,13 +442,11 @@ def run_global_one_timepoint(
     else:
         D = int(round(n * current_d_a))
 
-    # Compute realized utility
+    # Compute demand served and realized utility
     if T_active > 0:
         x = D / T_active  # Demand per active supplier
-        actual_q = allocation(x)
-        S = T_active * actual_q
-        total_revenue = revenue_fn.r(x) * T_active
-        U = total_revenue - p * S
+        S = T_active * allocation(x)
+        U = compute_realized_utility(D, T_active, p, revenue_fn, allocation, n)
     else:
         S = 0.0
         U = 0.0
