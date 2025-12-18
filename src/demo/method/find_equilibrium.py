@@ -24,6 +24,12 @@ from .supplier import (
 from .allocation import (
     AllocationFunction
 )
+from .revenue import (
+    RevenueFunction
+)
+from .platform_utility import (
+    compute_platform_utility
+)
 
 
 @dataclass
@@ -32,7 +38,7 @@ class MeanFieldEquilibrium:
     Mean-field equilibrium of the marketplace.
 
     This implements the limiting equilibrium from Lemma 2, where
-    the number of suppliers n → ∞.
+    the number of suppliers approaches mean-field ($\lim{n \rightarrow \infty}$)
 
     Attributes
     ----------
@@ -51,7 +57,7 @@ class MeanFieldEquilibrium:
     d_a: float
     mu: float                   # Equilibrium supply fraction
     q: float                    # Allocation per active supplier
-    #u: float                    # Platform utility
+    u: float                    # Platform utility
     demand_supply_ratio: float  # x = d_a / μ
 
 
@@ -137,7 +143,7 @@ def find_equilibrium_supply_mu(
 def compute_mean_field_equilibrium(
     p: float,
     d_a: float,
-    gamma: float,
+    revenue_fn: RevenueFunction,
     choice: ChoiceFunction,
     private_features: PrivateFeatureDistribution,
     allocation: AllocationFunction
@@ -151,14 +157,23 @@ def compute_mean_field_equilibrium(
     2. $q_a(\mu_a(p)) = \omega(d_a/\mu)$: Allocation per supplier (Equation 3.14)
     3. $u_a(p)$: Platform utility (Equation 3.15)
 
-    For the linear revenue function $r(x) = \gamma \cdot \omega(x)$ from Lemma 3,
-    the utility simplifies to:
-        $u_a(p) = (\gamma - p) \cdot \omega(d_a/\mu) \cdot \mu$
+    The utility is computed using the platform_utility module:
+        $u_a(p) = (r(d_a/\mu) - p \cdot \omega(d_a/\mu)) \cdot \mu$
 
     Parameters
     ----------
     p : float
         Payment per unit of demand served
+    d_a : float
+        Expected demand per supplier
+    revenue_fn : RevenueFunction
+        Platform revenue function
+    choice : ChoiceFunction
+        Supplier choice function
+    private_features : PrivateFeatureDistribution
+        Distribution of supplier private features
+    allocation : AllocationFunction
+        Allocation function
 
     Returns
     -------
@@ -179,16 +194,19 @@ def compute_mean_field_equilibrium(
     q = allocation(x)
 
     # Step 3: Compute utility (Equation 3.15)
-    # Using linear revenue: $r(x) = \gamma \cdot \omega(x)$
-    # $u_a(p) = (r(d_a/\mu) - p \cdot \omega(d_a/\mu)) \cdot \mu = (\gamma - p) \cdot q \cdot \mu$
-    # TODO switch to using the utility in platform_utility
-    #u = (gamma - p) * q * mu
+    u = compute_platform_utility(
+        revenue_fn=revenue_fn,
+        allocation=allocation,
+        d_a=d_a,
+        mu=mu,
+        p=p
+    )
 
     return MeanFieldEquilibrium(
         p=p,
         d_a=d_a,
         mu=mu,
         q=q,
-        #u=u,
+        u=u,
         demand_supply_ratio=x
     )
