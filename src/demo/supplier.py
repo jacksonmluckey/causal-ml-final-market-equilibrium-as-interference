@@ -137,12 +137,12 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
 @dataclass
 class PrivateFeatureDistribution:
     r"""
-    Distribution of private features B_i.
+    Distribution of private features $B_i$.
 
     Captures heterogeneity across suppliers (e.g., outside options,
     break-even cost thresholds).
 
-    Paper assumes $B_i$ is i.i.d. from some B distribution.
+    Paper assumes $B_i$ is i.i.d. from some $B$ distribution.
 
     Parameters
     ----------
@@ -158,7 +158,8 @@ class PrivateFeatureDistribution:
 def create_lognormal_costs(
     log_mean: float = 0.0,
     log_std: float = 1.0,
-    scale: float = 20.0
+    scale: float = 20.0,
+    seed: Optional[int] = None
 ) -> PrivateFeatureDistribution:
     r"""
     Create lognormal distribution for supplier costs.
@@ -173,14 +174,18 @@ def create_lognormal_costs(
         Standard deviation of $\log(B_i / \text{scale})$
     scale : float
         Scale factor (20 in the paper's example)
+    seed : Optional[int]
+        Random seed for reproducibility
 
     Returns
     -------
     PrivateFeatureDistribution
         The lognormal cost distribution
     """
+    rng = np.random.default_rng(seed)
+
     def sample(n: int) -> np.ndarray:
-        return scale * np.exp(np.random.normal(log_mean, log_std, n))
+        return scale * np.exp(rng.normal(log_mean, log_std, n))
 
     return PrivateFeatureDistribution(
         sample=sample,
@@ -188,14 +193,29 @@ def create_lognormal_costs(
     )
 
 
-def create_uniform_costs(low: float = 5.0, high: float = 50.0) -> PrivateFeatureDistribution:
+def create_uniform_costs(
+    low: float = 5.0,
+    high: float = 50.0,
+    seed: Optional[int] = None
+) -> PrivateFeatureDistribution:
     r"""
     Create uniform distribution for supplier costs.
 
     $B_i \sim \text{Uniform}(\text{low}, \text{high})$
+
+    Parameters
+    ----------
+    low : float
+        Lower bound of uniform distribution
+    high : float
+        Upper bound of uniform distribution
+    seed : Optional[int]
+        Random seed for reproducibility
     """
+    rng = np.random.default_rng(seed)
+
     def sample(n: int) -> np.ndarray:
-        return np.random.uniform(low, high, n)
+        return rng.uniform(low, high, n)
 
     return PrivateFeatureDistribution(
         sample=sample,
