@@ -25,5 +25,9 @@ docs = [
     "mkdocstrings[python]>=0.26.0",
 ]
 
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
 [tool.uv]
 package = true

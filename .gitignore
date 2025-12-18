@@ -1,0 +1,47 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# MacOS cruft
+*.DS_Store
+
+# Blobs/Big Files
+*.html
+*.pdf
+
+# Documentation build output
+docs/
+docsrc/content/api/
+docsrc/mkdocs.yml
+
+# Drew's code
+drews-reproduction-code/
+/.quarto/
+**/*.quarto_ipynb
+
+# Project rubric
+project-rubric.md
+
+# Claude Code stuff
+CLAUDE.md
+
+# Output
+data/*.csv
+figures/*.png
+
+# LaTeX files
+**.log
+**.tex
+
+# UV machine-specific stuff
+uv.lock
+
+# VSCode/Positron config
+.vscode/settings.json
