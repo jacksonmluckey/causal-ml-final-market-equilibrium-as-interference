@@ -67,7 +67,7 @@ plt.rcParams['text.usetex'] = True
     gg.labs(
         x = r'Payment $p$',
         y = 'Fraction',
-        title = r'\noindent Proportion of Suppliers Active $\mu_{d_a}(p)$ and Demand Per Active Supplier $q_{d_A}(p)$\\ as Demand $d_a$ and Payment $p$ Vary',
+        title = r'\noindent Proportion of Suppliers Active $\mu_{d_a}(p)$ and Demand Per Active Supplier $q_{d_a}(p)$\\ as Demand $d_a$ and Payment $p$ Vary',
         subtitle = r'Allocation with $L=8$ in mean-field limit as $n \rightarrow \infty$'
     ) +
     gg.theme_minimal() +
