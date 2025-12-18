@@ -1,5 +1,7 @@
-#!/usr/bin/env python
-"""Convert docstrings to raw strings to fix LaTeX escape sequences."""
+"""
+Convert docstrings to raw strings to fix LaTeX escape sequences.
+Used for using LaTeX in MkDocStrings output.
+"""
 
 import re
 from pathlib import Path
