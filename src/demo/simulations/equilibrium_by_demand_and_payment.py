@@ -5,6 +5,7 @@ from demo.method import (
     compute_mean_field_equilibrium,
     create_linear_revenue
 )
+from demo.utils import get_data_path
 import polars as pl
 from itertools import product
 from concurrent.futures import ProcessPoolExecutor
@@ -45,9 +46,9 @@ def main(d_a_values, p_values, gamma, choice_params, private_features_params, al
     df = (pl.DataFrame(equilibriums)
         .with_columns(demand_served = pl.col("mu") * pl.col("q")))
     
-    # TODO use something better than `../../`
-    df.write_csv('data/equilibrium_by_demand_and_payment.csv')
-    print('Simulations saved to data/equilibrium_by_demand_and_payment.csv')
+    path = get_data_path('equilibrium_by_demand_and_payment.csv')
+    df.write_csv(path)
+    print(f'Simulations saved to {path}')
 
 
 if __name__ == "__main__":
