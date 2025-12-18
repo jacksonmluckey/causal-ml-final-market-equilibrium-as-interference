@@ -9,7 +9,7 @@ format:
 from demo import (
     # Demand
     GlobalState,
-    DemandModel,
+    DemandParameters,
     sample_demand,
     # Allocation
     AllocationFunction,
@@ -95,7 +95,7 @@ states = {
     "high_demand": GlobalState("high_demand", d_a=0.6, probability=0.5),
 }
 
-demand_model = DemandModel(states, concentration_param=50)
+demand_model = DemandParameters(states, concentration_param=50)
 ```
 
 ```{python}

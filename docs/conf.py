@@ -28,6 +28,7 @@ napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
 napoleon_use_param = True
 napoleon_use_rtype = True
+napoleon_use_math = True  # Enable math mode
 
 # Autodoc settings
 autodoc_default_options = {
@@ -47,10 +48,17 @@ autodoc_typehints_description_target = 'documented'
 autoclass_content = 'both'
 
 # MathJax configuration for LaTeX rendering
+mathjax_path = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
 mathjax3_config = {
     'tex': {
         'inlineMath': [['$', '$'], ['\\(', '\\)']],
         'displayMath': [['$$', '$$'], ['\\[', '\\]']],
+        'processEscapes': True,
+        'processEnvironments': True,
+    },
+    'options': {
+        'ignoreHtmlClass': 'tex2jax_ignore',
+        'processHtmlClass': 'tex2jax_process',
     },
 }
 
