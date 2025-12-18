@@ -2,7 +2,8 @@ from demo.method import (
     create_queue_allocation,
     create_lognormal_costs,
     create_logistic_choice,
-    compute_mean_field_equilibrium
+    compute_mean_field_equilibrium,
+    create_linear_revenue
 )
 import polars as pl
 from itertools import product
@@ -14,7 +15,8 @@ def compute_mean_field_equilibrium_wrapper(p, d_a, gamma, choice_params, private
     choice = create_logistic_choice(**choice_params)
     private_features = create_lognormal_costs(**private_features_params)
     allocation = create_queue_allocation(**allocation_params)
-    return compute_mean_field_equilibrium(p, d_a, gamma, choice, private_features, allocation)
+    revenue = create_linear_revenue(gamma = gamma, allocation = allocation)
+    return compute_mean_field_equilibrium(p, d_a, revenue, choice, private_features, allocation)
 
 
 def main(d_a_values, p_values, gamma, choice_params, private_features_params, allocation_params):
