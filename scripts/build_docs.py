@@ -89,7 +89,7 @@ def main():
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     docsrc_dir = project_root / "docsrc"
-    api_dir = docsrc_dir / "api"
+    api_dir = docsrc_dir / "content" / "api"
     site_dir = project_root / "docs"
     src_dir = project_root / "src" / "demo"
 
@@ -105,7 +105,7 @@ def main():
         shutil.rmtree(site_dir)
 
     # Build HTML documentation using MkDocs library
-    config = load_config(config_file=str(project_root / "mkdocs.yml"))
+    config = load_config(config_file=str(docsrc_dir / "mkdocs.yml"))
     build(config)
 
     print(f"Open {site_dir / 'index.html'} to view the generated docs")

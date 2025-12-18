@@ -1,9 +1,9 @@
-site_name: TESTMarket Equilibrium as Interference
+site_name: Market Equilibrium as Interference
 site_description: Implementation of marketplace equilibrium model from Wager & Xu (2021)
 site_author: Jackson Luckey
 
-docs_dir: docsrc
-site_dir: docs
+docs_dir: content
+site_dir: ../docs
 
 theme:
   name: material
