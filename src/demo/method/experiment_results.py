@@ -14,6 +14,7 @@ import polars as pl
 from .demand import DemandParameters, GlobalState
 from .allocation import AllocationFunction
 from .supplier import SupplierParameters
+from .revenue import RevenueFunction
 
 
 @dataclass
@@ -92,8 +93,8 @@ class ExperimentParams:
         Number of suppliers per period
     p_init : float
         Initial payment level
-    gamma : float
-        Platform revenue per unit of demand served
+    revenue_fn : RevenueFunction
+        Platform revenue function
     p_bounds : Tuple[float, float]
         Payment bounds [c_-, c_+]
     allocation : AllocationFunction
@@ -120,7 +121,7 @@ class ExperimentParams:
     T: int
     n: int
     p_init: float
-    gamma: float
+    revenue_fn: RevenueFunction
     p_bounds: Tuple[float, float]
     allocation: AllocationFunction
     supplier_params: SupplierParameters
@@ -298,7 +299,6 @@ def experiment_to_dataframe(experiment: Experiment) -> pl.DataFrame:
     # Add experiment metadata as constants
     data['experiment_type'] = experiment.params.experiment_type
     data['n'] = n
-    data['gamma'] = experiment.params.gamma
 
     df = pl.DataFrame(data, strict = False)
 

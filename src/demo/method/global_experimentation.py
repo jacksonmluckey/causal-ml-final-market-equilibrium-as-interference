@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Optional, List, Tuple, overload
 
 from .allocation import AllocationFunction
+from .revenue import RevenueFunction
 from .supplier import SupplierParameters, sample_supplier_activations
 from .demand import DemandParameters, GlobalState, sample_state, sample_demand
 from .experiment_results import (
@@ -30,7 +31,7 @@ from .experiment_results import (
 def run_global_experiment(
     n: int,
     p: float,
-    gamma: float,
+    revenue_fn: RevenueFunction,
     allocation: AllocationFunction,
     supplier_params: SupplierParameters,
     t: int = 0,
@@ -50,8 +51,8 @@ def run_global_experiment(
         Number of suppliers
     p : float
         Payment level for all suppliers
-    gamma : float
-        Platform revenue per unit
+    revenue_fn : RevenueFunction
+        Platform revenue function
     allocation : AllocationFunction
         The allocation function ω
     supplier_params : SupplierParameters
@@ -107,12 +108,14 @@ def run_global_experiment(
     
     # Compute realized utility
     if T > 0:
-        actual_q = allocation(D / T)
+        x = D / T  # Demand per active supplier
+        actual_q = allocation(x)
         S = T * actual_q
+        total_revenue = revenue_fn.r(x) * T
+        U = total_revenue - p * S
     else:
         S = 0.0
-
-    U = gamma * S - p * S  # Revenue minus payments
+        U = 0.0
 
     return TimePointData(
         t=t,
@@ -146,7 +149,7 @@ def run_global_learning(
     p_init: float,
     eta: float,
     delta: float,
-    gamma: float,
+    revenue_fn: RevenueFunction,
     allocation: AllocationFunction,
     supplier_params: SupplierParameters,
     d_a: Optional[float] = None,
@@ -165,7 +168,7 @@ def run_global_learning(
     p_init: Optional[float] = None,
     eta: Optional[float] = None,
     delta: Optional[float] = None,
-    gamma: Optional[float] = None,
+    revenue_fn: Optional[RevenueFunction] = None,
     allocation: Optional[AllocationFunction] = None,
     supplier_params: Optional[SupplierParameters] = None,
     d_a: Optional[float] = None,
@@ -197,8 +200,8 @@ def run_global_learning(
         Step size parameter
     delta : float
         Finite difference step size
-    gamma : float
-        Platform revenue per unit
+    revenue_fn : RevenueFunction
+        Platform revenue function
     allocation : AllocationFunction
         The allocation function
     supplier_params : SupplierParameters
@@ -230,7 +233,7 @@ def run_global_learning(
         T = params.T
         n = params.n
         p_init = params.p_init
-        gamma = params.gamma
+        revenue_fn = params.revenue_fn
         allocation = params.allocation
         supplier_params = params.supplier_params
         p_bounds = params.p_bounds
@@ -247,10 +250,10 @@ def run_global_learning(
             demand_params = None
     else:
         # Validate that required parameters are provided
-        if any(x is None for x in [T, n, p_init, eta, delta, gamma, allocation, supplier_params]):
+        if any(x is None for x in [T, n, p_init, eta, delta, revenue_fn, allocation, supplier_params]):
             raise ValueError(
                 "When params is not provided, all of T, n, p_init, eta, delta, "
-                "gamma, allocation, and supplier_params must be provided"
+                "revenue_fn, allocation, and supplier_params must be provided"
             )
         if p_bounds is None:
             p_bounds = (0.0, float('inf'))
@@ -270,7 +273,7 @@ def run_global_learning(
             T=T,
             n=n,
             p_init=p_init,
-            gamma=gamma,
+            revenue_fn=revenue_fn,
             p_bounds=p_bounds,
             allocation=allocation,
             supplier_params=supplier_params,
@@ -320,7 +323,7 @@ def run_global_learning(
         timepoint = run_global_experiment(
             n=n,
             p=p,
-            gamma=gamma,
+            revenue_fn=revenue_fn,
             allocation=allocation,
             supplier_params=supplier_params,
             t=t,
@@ -334,11 +337,11 @@ def run_global_learning(
 
         # Compute utilities for gradient estimate
         U_plus = _compute_realized_utility(
-            n, p_plus, current_d_a, gamma, allocation, supplier_params,
+            n, p_plus, current_d_a, revenue_fn, allocation, supplier_params,
             demand_params, state, rng
         )
         U_minus = _compute_realized_utility(
-            n, p_minus, current_d_a, gamma, allocation, supplier_params,
+            n, p_minus, current_d_a, revenue_fn, allocation, supplier_params,
             demand_params, state, rng
         )
 
@@ -370,7 +373,7 @@ def _compute_realized_utility(
     n: int,
     p: float,
     d_a: float,
-    gamma: float,
+    revenue_fn: RevenueFunction,
     allocation: AllocationFunction,
     supplier_params: SupplierParameters,
     demand_params: Optional[DemandParameters],
@@ -405,8 +408,9 @@ def _compute_realized_utility(
     
     # Compute utility
     if T > 0:
-        S = T * allocation(D / T)
+        x = D / T
+        S = T * allocation(x)
+        total_revenue = revenue_fn.r(x) * T
+        return total_revenue - p * S
     else:
-        S = 0.0
-    
-    return gamma * S - p * S
+        return 0.0

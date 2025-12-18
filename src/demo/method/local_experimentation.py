@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple, List, Callable, Union, overload
 
 from .allocation import AllocationFunction
+from .revenue import RevenueFunction
 from .supplier import (
     ChoiceFunction,
     PrivateFeatureDistribution,
@@ -84,7 +85,7 @@ def run_local_experiment(
     zeta: float,
     expected_allocation: float,
     supplier_params: SupplierParameters,
-    gamma: float,
+    revenue_fn: RevenueFunction,
     allocation: AllocationFunction,
     t: int = 0,
     D: Optional[int] = None,
@@ -116,8 +117,8 @@ def run_local_experiment(
         Expected allocation q per active supplier at equilibrium
     supplier_params : SupplierParameters
         Supplier choice parameters
-    gamma : float
-        Platform revenue per unit served
+    revenue_fn : RevenueFunction
+        Platform revenue function
     allocation : AllocationFunction
         The allocation function ω
     t : int
@@ -186,12 +187,14 @@ def run_local_experiment(
 
     # Step 5: Compute demand served and utility
     if T > 0:
-        actual_q = allocation(D / T)
+        x = D / T  # Demand per active supplier
+        actual_q = allocation(x)
         S = T * actual_q
+        total_revenue = revenue_fn.r(x) * T
+        U = total_revenue - p * S
     else:
         S = 0.0
-
-    U = gamma * S - p * S  # Revenue minus cost
+        U = 0.0
 
     return TimePointData(
         t=t,
@@ -395,15 +398,13 @@ def estimate_utility_gradient(
     data: TimePointData,
     n: int,
     allocation: AllocationFunction,
-    gamma: float
+    revenue_fn: RevenueFunction
 ) -> GradientEstimate:
     r"""
     Complete gradient estimation from local experiment data.
 
     This implements the full estimation procedure from Section 4.1
     (Theorem 6), combining equations (4.1), (4.2), and (4.3).
-
-    For linear revenue $r(x) = \gamma \cdot \omega(x)$, we have $r'(x) = \gamma \cdot \omega'(x)$.
 
     Parameters
     ----------
@@ -413,8 +414,8 @@ def estimate_utility_gradient(
         Number of suppliers
     allocation : AllocationFunction
         The allocation function ω
-    gamma : float
-        Platform revenue per unit of demand served
+    revenue_fn : RevenueFunction
+        Platform revenue function
 
     Returns
     -------
@@ -433,20 +434,13 @@ def estimate_utility_gradient(
     )
 
     # Step 3: Estimate $\hat{\Gamma}$ (equation 4.3)
-    # For linear revenue: $r(x) = \gamma \cdot \omega(x)$, $r'(x) = \gamma \cdot \omega'(x)$
-    def revenue_fn(x: float) -> float:
-        return gamma * allocation(x)
-
-    def revenue_fn_prime(x: float) -> float:
-        return gamma * allocation.derivative(x)
-
     gamma_hat = estimate_gamma_hat(
         upsilon_hat=upsilon_hat,
         data=data,
         n=n,
         allocation=allocation,
-        revenue_fn=revenue_fn,
-        revenue_fn_prime=revenue_fn_prime
+        revenue_fn=revenue_fn.r,
+        revenue_fn_prime=revenue_fn.r_prime
     )
 
     D_bar = data.D / n
@@ -606,7 +600,7 @@ def run_learning_algorithm(
     p_init: float,
     eta: float,
     zeta: float,
-    gamma: float,
+    revenue_fn: RevenueFunction,
     allocation: AllocationFunction,
     supplier_params: SupplierParameters,
     d_a: Optional[float] = None,
@@ -628,7 +622,7 @@ def run_learning_algorithm(
     p_init: Optional[float] = None,
     eta: Optional[float] = None,
     zeta: Optional[float] = None,
-    gamma: Optional[float] = None,
+    revenue_fn: Optional[RevenueFunction] = None,
     allocation: Optional[AllocationFunction] = None,
     supplier_params: Optional[SupplierParameters] = None,
     d_a: Optional[float] = None,
@@ -665,8 +659,8 @@ def run_learning_algorithm(
         Step size $\eta$ (should satisfy $\eta > \sigma^{-1}$)
     zeta : float
         Perturbation magnitude $\zeta$ (should scale as $n^{-\alpha}$ for $0 < \alpha < 0.5$)
-    gamma : float
-        Platform revenue per unit served
+    revenue_fn : RevenueFunction
+        Platform revenue function
     allocation : AllocationFunction
         The allocation function ω
     supplier_params : SupplierParameters
@@ -708,7 +702,7 @@ def run_learning_algorithm(
         T = params.T
         n = params.n
         p_init = params.p_init
-        gamma = params.gamma
+        revenue_fn = params.revenue_fn
         allocation = params.allocation
         supplier_params = params.supplier_params
         p_bounds = params.p_bounds
@@ -727,10 +721,10 @@ def run_learning_algorithm(
             demand_params = None
     else:
         # Validate that required parameters are provided
-        if any(x is None for x in [T, n, p_init, eta, zeta, gamma, allocation, supplier_params]):
+        if any(x is None for x in [T, n, p_init, eta, zeta, revenue_fn, allocation, supplier_params]):
             raise ValueError(
                 "When params is not provided, all of T, n, p_init, eta, zeta, "
-                "gamma, allocation, and supplier_params must be provided"
+                "revenue_fn, allocation, and supplier_params must be provided"
             )
         if p_bounds is None:
             p_bounds = (0.0, float('inf'))
@@ -751,7 +745,7 @@ def run_learning_algorithm(
             T=T,
             n=n,
             p_init=p_init,
-            gamma=gamma,
+            revenue_fn=revenue_fn,
             p_bounds=p_bounds,
             allocation=allocation,
             supplier_params=supplier_params,
@@ -801,7 +795,7 @@ def run_learning_algorithm(
             zeta=zeta,
             expected_allocation=q_eq,
             supplier_params=supplier_params,
-            gamma=gamma,
+            revenue_fn=revenue_fn,
             allocation=allocation,
             t=t,
             d_a=current_d_a,
@@ -812,7 +806,7 @@ def run_learning_algorithm(
         )
 
         # Estimate gradients
-        grad_est = estimate_utility_gradient(timepoint, n, allocation, gamma)
+        grad_est = estimate_utility_gradient(timepoint, n, allocation, revenue_fn)
 
         # Update timepoint with gradient estimates
         timepoint.gradient_estimate = grad_est.gamma_hat
