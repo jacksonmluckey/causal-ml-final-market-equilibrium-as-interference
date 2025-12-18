@@ -1,8 +1,6 @@
 from demo import (
     create_queue_allocation,
-    create_linear_allocation,
-    compute_omega,
-    compute_omega_derivative,
+    create_linear_allocation
 )
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,7 +12,7 @@ from plotnine import (
     theme_minimal,
     labs
 )
-from utils import get_figures_path
+from .utils import get_figures_path
 
 
 allocations = []
@@ -24,8 +22,8 @@ supplier_queue_capacity_values = [2, 3, 4, 8, 15, 30, 50]
 for queue_capacity in supplier_queue_capacity_values:
     queue_allocation = create_queue_allocation(L = queue_capacity)
     for demand_per_active_supplier in demand_per_active_supplier_values:
-        allocation_per_supplier = compute_omega(queue_allocation, demand_per_active_supplier)
-        omega_derivative = compute_omega_derivative(queue_allocation, demand_per_active_supplier)
+        allocation_per_supplier = queue_allocation(demand_per_active_supplier)
+        omega_derivative = queue_allocation.derivative(demand_per_active_supplier)
         allocation = {
             "allocation_function": "queue",
             "demand_per_active_supplier": demand_per_active_supplier,
@@ -38,8 +36,8 @@ for queue_capacity in supplier_queue_capacity_values:
 # Calculate allocations using linear allocation mechanism
 linear_allocation = create_linear_allocation()
 for demand_per_active_supplier in demand_per_active_supplier_values:
-    allocation_per_supplier = compute_omega(linear_allocation, demand_per_active_supplier)
-    omega_derivative = compute_omega_derivative(linear_allocation, demand_per_active_supplier)
+    allocation_per_supplier = linear_allocation(demand_per_active_supplier)
+    omega_derivative = linear_allocation.derivative(demand_per_active_supplier)
     allocation = {
         "allocation_function": "linear",
         "demand_per_active_supplier": demand_per_active_supplier,
