@@ -23,14 +23,13 @@ Standard causal inference methods assume that the potential outcomes of a unit a
 
 1. Demand per supplier $d_a$ is randomly sampled from a pool of global states $\mathbfcal{A}$.
 1. The platform chooses a payment policy $\pi$ and draws the supplier-level payments $p_i \sim \pi$.
-2. Each supplier learns the payment policy $\pi$ and their payment $p_i$ and decides whether to be active using their choice function $f_{B_i}$.
+2. Each supplier learns the payment policy $\pi$ and their payment $p_i$ and decides whether to be active using their choice function $f_{B_i}$, where $B_i$ is supplier $i$'s opportunity cost of entering the market that day.
 3. The platform randomly allocates demand among active suppliers using the allocation function $\Omega$.
+4. The platform receives utility the difference between each unit of demand served and payments made to suppliers. In the simplest case, the platform receives $\gamma$ for each unit of demand served.
 
-In the simplest case, the platform receives $\gamma$ for each unit of demand served. The platform's utility is the sum of these payments minus the sum of the payments made to the suppliers. The goal of experimentation is to find the optimal payment $p^*$ at which the difference between overall revenue and payments to suppliers is maximized.
+The goal of experimentation is to find the optimal payment $p^*$ at which the difference between overall revenue and payments to suppliers is maximized.
 
-The platform knows its own utility function ($R$ and $r$), the market allocation mechanism ($\Omega$ and $\omega$), and the payment scheme ($\pi$), but does not know the global state ($A$), demand ($D$), or supplier behavior ($f_{B_i}$) in advance.
-
-Suppliers know...
+The platform knows its own utility function ($R$ and $r$), the market allocation mechanism ($\Omega$ and $\omega$), and the payment scheme ($\pi$), but does not know the global state ($A$), demand ($D$), or supplier behavior ($f_{B_i}$) in advance. Suppliers know the market state $A$ and their potential payemnt $p_i$.
 
 The methodology simplifies the market equilibrium to three key statistics:
 
@@ -47,6 +46,8 @@ Interference is through "demand cannibalization": changes in the price level $p$
 The marginal response $\triangle(p)$ is very close to the direct effect of changing $p$ [@stefan_wager_stefan_2020]
 
 ![Within a given level of $d_a$, the proportion of suppliers that are active and the proportion of demand served increases as the expected payment $p$ increases. Intuitively, the proportion of suppliers that are active and the expected demand allocated per active supplier are negatively correlated. The proportion of demand served stops increasing at a lower payment level than the proportion of suppliers that are active. As $d_a$ increases, the proportion of demand served and proportion of suppliers that are active increases for any payment $p$ while demand per active supplier decreases less as $p$ increases.](figures/market_behavior_by_payment_and_demand.png){#fig-market-behavior-payment-demand}
+
+![](figures/global_vs_local_experimentation.png){#fig-global-vs-local-experimentation}
 
 ## Directions for Future Research
 

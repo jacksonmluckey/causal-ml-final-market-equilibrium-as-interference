@@ -116,14 +116,27 @@ from .local_experimentation import (
     compute_optimal_zeta,
 )
 
-from .kiefer_wolfowitz_global_experimentation import (
-    run_kiefer_wolfowitz_global_learning,
+from .global_experimentation import (
+    run_global_experimentation,
 )
 
-from .baseline_global_experimentation import (
-    run_baseline_global_learning,
+from .bandit_experimentation import (
     fit_utility_spline,
+    find_best_payment_from_history,
+    sample_exploration_payment,
+    compute_epsilon,
 )
+
+
+# Backwards compatibility alias
+def run_baseline_global_learning(**kwargs):
+    """
+    Backwards-compatible alias for baseline global experimentation.
+
+    This function calls run_global_experimentation with strategy="baseline".
+    Use run_global_experimentation directly for new code.
+    """
+    return run_global_experimentation(strategy="baseline", **kwargs)
 
 __all__ = [
     # Utils
@@ -173,7 +186,10 @@ __all__ = [
     'run_learning_algorithm', 'compute_experimentation_cost',
     'compute_optimal_zeta',
     # Global Experimentation
-    'run_kiefer_wolfowitz_global_learning',
-    # Baseline Global Experimentation
-    'run_baseline_global_learning', 'fit_utility_spline',
+    'run_global_experimentation',
+    # Bandit Utilities
+    'fit_utility_spline', 'find_best_payment_from_history',
+    'sample_exploration_payment', 'compute_epsilon',
+    # Backwards Compatibility
+    'run_baseline_global_learning',
 ]
