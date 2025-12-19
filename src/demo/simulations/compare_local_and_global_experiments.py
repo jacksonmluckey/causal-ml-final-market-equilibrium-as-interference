@@ -85,24 +85,6 @@ global_baseline_params = ExperimentParams(
     store_detailed_data=False    
 )
 
-# Global experimentation parameters
-global_kiefer_wolfowitz_params = ExperimentParams(
-    T=n_days,
-    n=n_suppliers,
-    p_init=25,
-    revenue_fn=revenue_fn,
-    p_bounds=(0, 100),
-    allocation=allocation,
-    supplier_params=supplier,
-    demand=demand,
-    eta=1,
-    experiment_type="global",
-    zeta=None,
-    alpha=None,
-    delta=1.0,
-    store_detailed_data=False
-)
-
 
 if __name__ == "__main__":
     print("Running local experimentation...")
@@ -111,13 +93,9 @@ if __name__ == "__main__":
     print("Running baseline global experimentation...")
     global_baseline_exp = run_baseline_global_learning(params=global_baseline_params, rng=rng)
 
-    print("Running Kiefer-Wolfowitz global experimentation...")
-    global_kiefer_wolfowitz_exp = run_kiefer_wolfowitz_global_learning(params=global_kiefer_wolfowitz_params, rng=rng)
-
     local_df = local_exp.to_polars().with_columns(pl.lit('Local').alias('experimentation'))
     global_baseline_df = global_baseline_exp.to_polars().with_columns(pl.lit('Global (Baseline Bandit)').alias('experimentation'))
-    global_kiefer_wolfowitz_df = global_kiefer_wolfowitz_exp.to_polars().with_columns(pl.lit('Global (Kiefer Wolfowitz)').alias('experimentation'))
-    df = pl.concat([local_df, global_baseline_df, global_kiefer_wolfowitz_df], how = 'diagonal')
+    df = pl.concat([local_df, global_baseline_df], how = 'diagonal')
     df_path = get_data_path('local_vs_global_experiment.csv')
     df.write_csv(df_path)
     print(f"Saved results to {df_path}")
