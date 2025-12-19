@@ -78,11 +78,12 @@ class ExperimentParams:
     allocation: AllocationFunction
     supplier_params: SupplierParameters
     demand: Union[float, DemandParameters]
-    eta: float
     experiment_type: str
+    eta: Optional[float] = None
     zeta: Optional[float] = None
     alpha: Optional[float] = 0.3
     delta: Optional[float] = None
+    T_explore: Optional[int] = None
     rng_seed: Optional[int] = None
     store_detailed_data: bool = False
 

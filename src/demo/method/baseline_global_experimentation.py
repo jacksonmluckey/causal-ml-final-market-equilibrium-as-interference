@@ -190,6 +190,7 @@ def run_baseline_global_learning(
     # Extract parameters from ExperimentParams if provided
     if params is not None:
         T = params.T
+        T_explore = params.T_explore
         n = params.n
         revenue_fn = params.revenue_fn
         allocation = params.allocation
@@ -236,7 +237,7 @@ def run_baseline_global_learning(
             supplier_params=supplier_params,
             demand=demand_params if demand_params is not None else d_a,
             eta=None,  # Not used in baseline
-            experiment_type="baseline_global",
+            experiment_type="global",
             zeta=None,
             alpha=None,
             delta=None,
