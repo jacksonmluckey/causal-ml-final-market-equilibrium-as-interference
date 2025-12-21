@@ -2,6 +2,8 @@
 title: "Market Equilibrium as Global Interference"
 author: "Jackson M Luckey"
 bibliography: "Final Project - Market Equilibrium as Interference.bib"
+# number-sections needed for the cross-references to appear
+number-sections: true
 format:
     html:
         embed-resources: true
@@ -13,74 +15,74 @@ format:
 
 ## Introduction
 
-Standard causal inference methods assume that the potential outcomes of a unit are unaffected by the treatment assignment of every other unit. The violation of this assumption is called interference. A classic example is vaccination, where the vaccination of others in the community reduces the spread of disease among all members of the community. The classical approach for handling interference is to partition units into groups such that all interference occurs within groups [@hudgens_toward_2008; @drew_dimmery_causal_2025]. The "General" portion of @fig-general-vs-market-interference shows an example where interference can be isolated by clustering units into groups. Another set of approaches isolate social spillovers by partitioning using a social network [@aronow_estimating_2017; @ugander_graph_2013]. Markets, however, bring interference that cannot be tackled with either of these sets of approaches. Market equilibrium is determined by all sources of supply and demand, causing the treatment of any unit to interfere with the outcomes of all units. The "Market Equilibrium" portion of @fig-general-vs-market-interference shows this interference structure. Under this global interference setting, it is not possible to cluster units into groups or subgraphs to isolate interference. On the other hand, knowing that the interference is channeled through the price effect provides sufficient structure for alternative approaches [@wager_experimenting_2020; @munro_treatment_2025].
+Standard causal inference methods assume that the potential outcomes of a unit are unaffected by the treatment assignment of every other unit. The violation of this assumption is called interference. A classic example is vaccination, where the vaccination of others in the community reduces the spread of disease among all members of the community. The classical approach for handling interference is to partition units into groups such that all interference occurs within groups [@hudgens_toward_2008; @drew_dimmery_causal_2025]. The "General" portion of @fig-general-vs-market-interference shows an example where interference can be isolated by clustering units into groups. Another set of approaches isolate social spillovers by partitioning the social network into subgraphs [@aronow_estimating_2017; @ugander_graph_2013]. Markets, however, bring interference that cannot be tackled with either of these sets of approaches. Market equilibrium is determined by all sources of supply and demand, causing the treatment of any unit to interfere with the outcomes of all units. The "Market Equilibrium" portion of @fig-general-vs-market-interference shows this interference structure. Under this global interference setting, it is not possible to cluster units into groups or subgraphs to isolate interference. On the other hand, knowing that the interference is channeled through the price effect provides sufficient structure for alternative approaches [@wager_experimenting_2020; @munro_treatment_2025].
 
-![In the general interference setting, the treatment assignment of a unit affects the outcomes of some other units directly. In this figure, interference between units is clustered in groups of 3. In markets, the treatment assignment of all units interferes with the potential outcomes of all units through the price effect (represented as P). This figure was inspired by a sketch in @stefan_wager_stefan_2021's talk.](figures/general-vs-market-interference.png){#fig-general-vs-market-interference width=70%}
+![In the general interference setting, the treatment assignment of a unit affects the outcomes of some other units directly. In this figure, interference between units is clustered in groups of 3. In markets, the treatment assignment of all units interferes with the potential outcomes of all units through the price effect (represented as P). This figure was inspired by a sketch in @stefan_wager_stefan_2021's talk.](figures/general-vs-market-interference.png){#fig-general-vs-market-interference width="70%"}
 
-The traditional approach to experimentation in two-sided marketplaces starts by segmenting the marketplace into independent submarkets. For example, a ridesharing platforms could treat New York City and San Francisco as separate submarkets. After segmentation, the platform can experiment globally within each submarket, typically with a bandit. This approach has many drawbacks. It requires the marketplace to have plausibly independent submarkets, which is not true for many markets. It is slow to converge. It has high opportunity costs as exploration requires globally supoptimal pricing. Finally, it requires strong assumptions for pooling learning across submarkets [@wager_experimenting_2020; @stefan_wager_stefan_2020]. 
+The traditional approach to experimentation in two-sided marketplaces starts by segmenting the marketplace into independent submarkets. For example, a ridesharing platforms could treat New York City and San Francisco as separate submarkets. After segmentation, the platform can experiment globally within each submarket, typically with a bandit. This approach has many drawbacks. It requires the marketplace to have plausibly independent submarkets, which is not true for many markets. It is slow to converge. It has high opportunity costs as exploration requires globally suboptimal pricing. Finally, it requires strong assumptions for pooling learning across submarkets [@wager_experimenting_2020; @stefan_wager_stefan_2020].
 
-In contrast, @wager_experimenting_2020 exploits the structure of interference being channeled through the price effect to design an experiment framework that allows for local experimentation in a two-sided marketplace despite global interference. In @wager_experimenting_2020, global interference is through "demand cannibalization": changes in the price level $p$ cause changes in the proportion of active suppliers $\mu$, which cause changes in expected demand per active supplier $q$, which changes supplier's decision to become active, changing the proportion of active suppliers $\mu$ again. This loop makes modelling market equilibrium extremely challenging [@stefan_wager_stefan_2020]. @wager_experimenting_2020 solves this problem with three key ideas:
+In contrast, @wager_experimenting_2020 exploits the structure of interference being channeled through the price effect to design an experiment framework that allows for local experimentation in a two-sided marketplace despite global interference. In their model, global interference is through "demand cannibalization": changes in the price level $p$ cause changes in the proportion of active suppliers $\mu$, which cause changes in expected demand per active supplier $q$, which changes supplier's decision to become active, changing the proportion of active suppliers $\mu$ again. This feedback loop makes modeling market equilibrium extremely challenging [@stefan_wager_stefan_2020]. @wager_experimenting_2020 solves this problem with the following key ideas:
 
-1. In a sufficiently large market, individual behavior has a very small effect on the overall market equilibrium, meaning that you can experiment on one individual without significant global interference (see @sec-mean-field).
-2. Experimenting with individual-level price perturbations that cancel each out in the aggregate keeps the market equilibrium the same (see @sec-experiment-design).
-3. Building on the first two ideas, a small change in price for a specific individual will only affect that individual's decision of whether or not to enter the market, allowing us to estimate the marginal response to a change in price $\triangle(p)$ (see @sec-marginal-response).
-4. Market equilibrium can be simplified to supply, demand, and the elasticities of supply with respect to demand and vice versa (see @sec-key-statistics). These two elasicities are the marginal response to a change in price $\triangle(p)$. This approach builds on the sufficient statistics literature, where economists reduce intractable structural models to a small number of statistical relationships that represent elasticities [@chetty_sufficient_2008].
+1.  In a sufficiently large market, individual behavior has a very small effect on the overall market equilibrium, meaning that you can experiment on one individual without significant global interference (see @sec-mean-field).
+2.  Experimenting with individual-level price perturbations that cancel each out in the aggregate keeps the market equilibrium the same (see @sec-experiment-design).
+3.  Building on the first two ideas, a small change in price for a specific individual will only affect that individual's decision of whether or not to enter the market, allowing us to estimate the marginal response to a change in price $\triangle(p)$ (see @sec-marginal-response).
+4.  Market equilibrium can be simplified to supply, demand, and the elasticities of supply with respect to demand and vice versa (see @sec-key-statistics). These two elasticities are the marginal response to a change in price $\triangle(p)$. This approach builds on the sufficient statistics literature, where economists reduce intractable structural models to a small number of statistical relationships that represent elasticities [@chetty_sufficient_2008].
 
-In a sufficiently large market where demand[^demand_and_not_supply] is exogenous, these ideas enable efficient local experimentation despite global interference from market equilibrium.
+In a sufficiently large market where demand[^fixed_demand] is exogenous, these ideas enable efficient local experimentation despite global interference from market equilibrium.
 
-[^demand_and_not_supply]: I am pretty sure that swapping supply and demand would work, but I haven't tested it yet.
+[^fixed_demand]: I suspect that making supply fixed and having demand fluctuate would work, but I haven't thought about it sufficiently, let alone tried setting it up mathematically.
 
 ## Market Mechanics
 
-The goal of experimentation with the methodology from @wager_experimenting_2020 is to find the optimal payment $p^*$ at which the platform's utility is maximized. In the paper's setup, the market consists of exogenous demand (i.e. not affected by supply) and a fixed pool of suppliers that can choose to become active on any given day (i.e. there is no market entry or exit). On each day:
+The goal of experimentation with the methodology from @wager_experimenting_2020 is to find the optimal payment $p^*$ at which the platform's utility is maximized while minimizing the opportunity cost incurred by experimentation (i.e. regret). In the paper's setup, the market consists of exogenous demand (i.e. not affected by supply) and a fixed pool of suppliers that can choose to become active on any given day (i.e. there is no market entry or exit). On each day:
 
-1. Demand $D_a$ and demand per supplier $d_a$ is determined by randomly sampling a global state $A$ from the set of global states $\mathbfcal{A}$.
-1. The platform chooses a payment policy $\pi$ and draws the supplier-level payments $P_i \sim \pi$.
-2. Each supplier learns the payment policy $\pi$ and their payment $P_i$ and decides whether to be active using their choice function $f_{B_i}$, where $B_i$ is supplier $i$'s opportunity cost of entering the market that day (see @sec-supplier).
-3. The platform randomly allocates demand among active suppliers using the allocation function $\Omega$ (see @sec-allocation).
-4. The platform receives utility based on the difference between revenue from each unit of demand served and payments made to suppliers. In the simplest case, the platform receives $\gamma$ for each unit of demand served.
+1.  Demand $D_a$ and demand per supplier $d_a$ is determined by randomly sampling a global state $A$ from the set of global states $\mathbfcal{A}$.
+2.  The platform chooses a payment policy $\pi$ and draws the supplier-level payments $P_i \sim \pi$.
+3.  Each supplier learns the payment policy $\pi$ and their payment $P_i$ and decides whether to be active using their choice function $f_{B_i}$, where $B_i$ is supplier $i$'s opportunity cost of entering the market that day (see @sec-supplier).
+4.  The platform randomly allocates demand among active suppliers using the allocation function $\Omega$ (see @sec-allocation).
+5.  The platform receives utility based on the difference between revenue from each unit of demand served and payments made to suppliers. In the simplest case, the platform receives $\gamma$ for each unit of demand served.
 
-When deciding the payment policy $\pi$, the market platform knows its own utility function ($R$ and $r$), the market allocation mechanism ($\Omega$ and $\omega$), and the payment scheme ($\pi$), but does not know the global state ($A$), demand ($D$), or supplier behavior ($f_{B_i}$) in advance. The methodology assumes that random variables are independent across time points and independent from one another within time points. This rules out time series effects through $A$[^timeseries].
+When deciding the payment policy $\pi$, the market platform knows its own utility function ($R$ and $r$), the market allocation mechanism ($\Omega$ and $\omega$), and the payment scheme ($\pi$), but does not know the global state ($A$), demand ($D$), or supplier behavior ($f_{B_i}$) in advance. The methodology assumes that random variables are independent across time points and independent from one another within time points. This rules out time series effects through $A$[^time_series_global_state].
 
-[^timeseries]: I presume that this means that the platform knows predictable time series trends and that $A$ only represents the purely stochastic portion of the global state. I suspect this model could be adapted to condition on both a stochastic global state unknown to the platform and a state known to the model, but I haven't tried it.
+[^time_series_global_state]: I presume that this means that the platform knows predictable time series trends and that $A$ only represents the purely stochastic portion of the global state. I suspect this model could be adapted to condition on both a stochastic global state unknown to the platform and a state known to the model, but I haven't tried it.
 
 ## Market Equilibrium as Key Statistics {#sec-key-statistics}
 
 The methodology simplifies the market equilibrium to three key statistics:
 
-- $\mu(p)$: The proportion of suppliers that are active at the price level $p$.
-- $q(\mu)$: The expected demand allocated per active supplier when $\mu$ proportion of suppliers are active.
-- $\triangle(p)$: The marginal response of a supplier to changes in the price level $p$ holding the rest of the market fixed.
+-   $\mu(p)$: The proportion of suppliers that are active at the price level $p$.
+-   $q(\mu)$: The expected demand allocated per active supplier when $\mu$ proportion of suppliers are active.
+-   $\triangle(p)$: The marginal response of a supplier to changes in the price level $p$ holding the rest of the market fixed.
 
 ![Within a given level of $d_a$, the proportion of suppliers that are active and the proportion of demand served increases as the expected payment $p$ increases. Intuitively, the proportion of suppliers that are active and the expected demand allocated per active supplier are negatively correlated. The proportion of demand served stops increasing at a lower payment level than the proportion of suppliers that are active. As $d_a$ increases, the proportion of demand served and proportion of suppliers that are active increases for any payment $p$ while demand per active supplier decreases less as $p$ increases.](figures/market_behavior_by_payment_and_demand.png){#fig-market-behavior-payment-demand}
 
 ## Mean Field Analysis {#sec-mean-field}
 
-@wager_experimenting_2020 relies on mean-field analysis. As the the number of suppliers $n$ increases, the law of large numbers causes randomness from individual suppliers to average out, eliminating local randomness and leaving only global randomness from the state $A$. Furthermore, interference from any single supplier diminishes, making supplier behavior increasingly independent from one another. In the mean-field ($\lim_{n \rightarrow \infty}$), supplier behavior is asymptotically independent and stochastacity comes exclusively from the global state $A$. Under the mean-field analysis, the key statistics underpinning the market model converge to limiting functions, making the quantities deterministic functionns. For example:
+@wager_experimenting_2020 relies on mean-field analysis. As the the number of suppliers $n$ increases, the law of large numbers causes randomness from individual suppliers to average out, eliminating local randomness and leaving only global randomness from the state $A$. Furthermore, interference from any single supplier diminishes, making supplier behavior increasingly independent from one another. In the mean-field ($\lim_{n \rightarrow \infty}$), supplier behavior is asymptotically independent and stochasticity comes exclusively from the global state $A$. Under the mean-field analysis, the key statistics underpinning the market model converge to limiting functions, making the quantities deterministic functions. For example:
 
-- $\lim_{n \rightarrow \infty} \mu_{a}^{(n)} (p) = \mu_{a} (p)$: In a sufficiently large market, the proportion of suppliers that are active becomes $\mu$ (conditional on global state $A$ and payment $p$).
-- $\lim_{n \rightarrow \infty} q_{a}^{(n)} (\mu) = \omega \left( \frac{d_a}{\mu} \right)$: In a sufficiently large market, the demand allocated per active supplier is the demand per supplier divided by the proportion of suppliers that are active.
-- $\lim_{n \rightarrow \infty} u_{a}^{(n)} (p) = u_{a} (p) = \left( r \left( \frac{d_a}{\mu_a (p)} \right) - p \omega \left( \frac{d_a}{\mu_a (p)} \right) \right) \mu_{a} (p)$: In a sufficiently large market, the platform utility per supplier is the proportion of suppliers that are active times the difference between revenue per active supplier and payments per active suppliers.
-- $\lim_{n \rightarrow \infty} (q_{a}^{(n)})' (\mu) = -\omega' \left( \frac{d_a}{\mu} \right) \frac{d_a}{\mu^2}$: In a sufficiently large market, increasing supplier participation decreases each supplier's allocation.
+-   $\lim_{n \rightarrow \infty} \mu_{a}^{(n)} (p) = \mu_{a} (p)$: In a sufficiently large market, the proportion of suppliers that are active becomes $\mu$ (conditional on global state $A$ and payment $p$).
+-   $\lim_{n \rightarrow \infty} q_{a}^{(n)} (\mu) = \omega \left( \frac{d_a}{\mu} \right)$: In a sufficiently large market, the demand allocated per active supplier is the demand per supplier divided by the proportion of suppliers that are active.
+-   $\lim_{n \rightarrow \infty} u_{a}^{(n)} (p) = u_{a} (p) = \left( r \left( \frac{d_a}{\mu_a (p)} \right) - p \omega \left( \frac{d_a}{\mu_a (p)} \right) \right) \mu_{a} (p)$: In a sufficiently large market, the platform utility per supplier is the proportion of suppliers that are active times the difference between revenue per active supplier and payments per active suppliers.
+-   $\lim_{n \rightarrow \infty} (q_{a}^{(n)})' (\mu) = -\omega' \left( \frac{d_a}{\mu} \right) \frac{d_a}{\mu^2}$: In a sufficiently large market, increasing supplier participation decreases each supplier's allocation.
 
 ## Allocation of Demand {#sec-allocation}
 
 Allocation of demand to active suppliers is done at random using an allocation function $\Omega$. Allocation functions must fulfill the following properties:
 
-- Smooth: A small change in expected demand per supplier should make a small change in demand allocated per supplier.
-- Concave: The marginal difficultly of matching an additional unit of demand cannot decrease.
-- Non-Decreasing: The more demand per supplier, the more demand each supplier must be allocated.
-- $\lim_{x \rightarrow 0} \omega(x) = 0$: If there is no demand, suppliers cannot be allocated demand.
-- $\lim_{x \rightarrow \infty} \omega(x) \leqslant 1$: Suppliers cannot supply more than their capacity.
-- $\lim_{x \rightarrow 0} \omega'(x) \leqslant 1$: When demand is low relative to supply, the allocation rate cannot grow faster than demand.
+-   Smooth: A small change in expected demand per supplier should make a small change in demand allocated per supplier.
+-   Concave: The marginal difficultly of matching an additional unit of demand cannot decrease.
+-   Non-Decreasing: The more demand per supplier, the more demand each supplier must be allocated.
+-   $\lim_{x \rightarrow 0} \omega(x) = 0$: If there is no demand, suppliers cannot be allocated demand.
+-   $\lim_{x \rightarrow \infty} \omega(x) \leqslant 1$: Suppliers cannot supply more than their capacity.
+-   $\lim_{x \rightarrow 0} \omega'(x) \leqslant 1$: When demand is low relative to supply, the allocation rate cannot grow faster than demand.
 
 When the market is large, such an allocation function converges to $\omega(D = d, T = t)$ when the whose behavior is only a function of the ratio between demand the number of active suppliers. @fig-allocation-functions shows an example of a well-behaved allocation function, Parallel Finite Capacity Queues, where demand is randomly allocated among suppliers conditional on the suppliers not already having $L$ units of demand in their queue already [@wager_experimenting_2020]. The simulation in this paper uses this function with the queue length $L$ set to 5.
 
-![@wager_experimenting_2020 uses Parallel Finite Capacity Queues as an example of a well-behaved allocation function. This figure shows that as queue length $L$ increases, the allocation per active supplier $\omega(x)$ becomes more and more linear. In the limit $\lim_{L \rightarrow \infty}$, $\omega(x)$ allocates demand linearly: demand allocated per active supplier is literally demand per active supplier until demand is greater than maximum possible supply ($x = 1$). ](figures/allocations_by_allocation_function.png){#fig-allocation-functions width=60%}
+![@wager_experimenting_2020 uses Parallel Finite Capacity Queues as an example of a well-behaved allocation function. This figure shows that as queue length $L$ increases, the allocation per active supplier $\omega(x)$ becomes more and more linear. In the limit $\lim_{L \rightarrow \infty}$, $\omega(x)$ allocates demand linearly: demand allocated per active supplier is literally demand per active supplier until demand is greater than maximum possible supply ($x = 1$).](figures/allocations_by_allocation_function.png){#fig-allocation-functions width="60%"}
 
 ## Supplier's Choice {#sec-supplier}
 
-When deicidng whether to enter the market, suppliers know the market state $A$ and their potential payemnt $P_i$. The suppliers decision to become active is given by (3.6 in @wager_experimenting_2020):
+When deciding whether to enter the market, suppliers know the market state $A$ and their potential payment $P_i$. The suppliers decision to become active is given by (3.6 in @wager_experimenting_2020):
 
 $$
 \mu_{a}^{(n)} (\pi) = \mathbb{P}_{\pi} [Z_i = 1 | A = a] = \mathbb{E} [\underbrace{f_{B_i} (P_i \mathbb{E}_{\pi} [\Omega (D, T) | A = a])}_{\text{Supplier $i$'s Choice}} | A = a]
@@ -88,10 +90,10 @@ $$
 
 where:
 
-- $Z_i$ is supplier $i$'s decision to enter the market.
-- $T$ is the equilibrium number of active suppliers.
-- $\mathbb{E}_{\pi} [\Omega (D, T) | A = a]$ is the expected amount of demand served per provider given the platform's choice of $\pi$.
-- $P_i \mathbb{E}_{\pi} [\Omega (D, T) | A = a]$ is the expected revenue of the $i$-th supplier in equilibrium ($).
+-   $Z_i$ is supplier $i$'s decision to enter the market.
+-   $T$ is the equilibrium number of active suppliers.
+-   $\mathbb{E}_{\pi} [\Omega (D, T) | A = a]$ is the expected amount of demand served per provider given the platform's choice of $\pi$.
+-   $P_i \mathbb{E}_{\pi} [\Omega (D, T) | A = a]$ is the expected revenue of the $i$-th supplier in equilibrium (\$).
 
 The choice function $f_{B_i}(x)$ determines whether supplier $i$ with opportunity cost $B_i$ becomes active when expected revenue in equilibrium for an active supplier is $x$. The function must be monotonically non-decreasing and have a uniformly bounded second derivative. A good example is the logistic choice function (3.7 in @wager_experimenting_2020):
 
@@ -107,13 +109,17 @@ Supplier payments are randomly perturbed by $\zeta \epsilon_{it}$, where $\zeta$
 
 ## Marginal Response {#sec-marginal-response}
 
-Regressing $Z_{it}$ on $\epsilon_{it}$ gives the marginal response $\triangle(p)$, which measures the local (i.e. holding the rest of the market constant) elasticity of supply with respect to price $p$. The marginal response $\triangle(p)$ is very close to the direct effect of changing $p$ [@stefan_wager_stefan_2021].
+Regressing $Z_{it}$ on $\epsilon_{it}$ gives the marginal response $\triangle(p)$, which measures how sensitive[^marginal_response_as_elasticity] suppliers are to changes in payments when equilibrium is held fixed. The marginal response $\triangle(p)$ is very close to the direct effect of changing $p$ [@stefan_wager_stefan_2021].
+
+[^marginal_response_as_elasticity]: I conceptualize this as the local elasticity of supply with respect to price $p$.
 
 As we know the allocation function $\omega$, we can estimate the global (i.e. including feedback effects in market equilibrium) elasticity of supply with respect to $p$ with (basically 3.20 in @wager_experimenting_2020):
 
 $$
 \frac{d \mu(p)}{d p} = \triangle_a(p) \left( 1 + \frac{p d_a \triangle_a(p) \omega'\left(\frac{d_a}{\mu_a(p)}\right)}{\mu_a(p)^2 \omega\left(\frac{d_a}{\mu_a(p)}\right)} \right)^{-1}
 $$
+
+The global elasticity, $\frac{d \mu(p)}{d p}$, is used to update $p$ via gradient ascent.
 
 The difference between $\triangle(p)$ and the global elasticity is the global interference. This is related to the indirect effect [@stefan_wager_stefan_2021]. Global interference is a function of (basically 3.21 in @wager_experimenting_2020):
 
@@ -131,23 +137,19 @@ The (scaled) marginal sensitivity is small when the marginal response $\triangle
 
 I compared the local experimentation methodology of @wager_experimenting_2020 to global experimentation with an epsilon-greedy bandit. I simulated a market over 200 days with $10,000$ suppliers. @fig-global-vs-local-experimentation shows the results of the simulation. As expected, local experimentation significantly outperformed global experimentation.
 
-From ad hoc experimentation, I also found that local experimentation excels relative to global experimentation when the global states are diverse. Without a high $\epsilon$, global bandits can easily spend a significant portion of the days with a highly suboptimal $p$ if the explore days coincide with drawing the same extreme global state. With a high $\epsilon$, regret is high from chosing supoptimal $p$ values on many days. This is only partially mitigated with a high starting epsilon coupled with epsilon decay. On the other hand, with a small market size, a bad initial $p$ value, a relatively small number of timepoints, and similar states in $\mathbfcal{A}$, global bandits sometimes outperform local experimentation because local experimentation either converges slowly or requires a large $zeta$, which both significantly increase regret. Local experimentation consistently converges much closer to the true $p^*$ than global experimentation given sufficient timepoints.
+From ad hoc experimentation, I also found that local experimentation excels relative to global experimentation when the global states are diverse. Without a high $\epsilon$, global bandits can easily spend a significant portion of the days with a highly suboptimal $p$ if the explore days coincide with drawing the same extreme global state. With a high $\epsilon$, regret is high from choosing suboptimal $p$ values on many days. This is only partially mitigated with a high starting epsilon coupled with epsilon decay. On the other hand, with a small market size, a bad initial $p$ value, a relatively small number of timepoints, and similar states in $\mathbfcal{A}$, global bandits sometimes outperform local experimentation because local experimentation either converges slowly or requires a large $zeta$, which both significantly increase regret. Local experimentation consistently converges much closer to the true $p^*$ than global experimentation given sufficient timepoints.
 
 ## Directions for Future Research
 
-Non-exogenous demand
+I watched a recording of Stefan Wager presenting early work on "Treatment Effects in Market Equilibrium" followed by commentary by Fredrik Sävje [@stefan_wager_stefan_2021]. Their discussion brought up many interesting future research ideas, including:
 
-Supplier entry/exit
-
-Off-policy estimation (as mentioned by Fredrik Sävje in @stefan_wager_stefan_2021)
-
-Counterfactual models of the market using neighborhood or even global estimation of the "key statistics" (~54:30 by Fredrik Sävje in @stefan_wager_stefan_2021)
-
-Applying this approach to global interference to other economics research desgins (~45:00 in @stefan_wager_stefan_2021)
-
-Being able to experiment when we don't control the market (as mentioned by Fredrik Sävje starting at ~55:00 in @stefan_wager_stefan_2021). Very different when the experiment is a subset of the whole market.
-
-Possible to do "interference mostly through price" (as mentioned by Fredrik Sävje in @stefan_wager_stefan_2021 starting around ~56:00)
+-   Extending the methodology introduced in "Experimenting in Equilibrium" to handle off-policy estimation. Fredrik Sävje suggested that the key statistics approach to market modeling could be used to construct counterfactual models of the market with neighborhood or global estimation.
+-   Stefan Wager expressed interest in applying these developments to other economics research designs. I haven't gotten a handle on the "Treatment Effects in Market Equilibrium" paper yet, but it sounded like there might be a way to apply these ideas to IV.
+-   Estimating effects on the entire market when limited to experimenting in a subset of the market. Many
+-   Introducing supplier entry and exit, which is an important component of most markets. "Experimenting in Equilibrium" uses subsidies for renewables in energy markets as a potential policy example, but from my (limited) understanding of energy markets and policy, supplier entry is the actual policy goal.
+-   Handling "interference mostly through price", which Fredrik Sävje and Stefan Wager both agreed should be feasible.
+-   Being able to make inferences about the global market through experimentation in particular submarkets.
 
 \clearpage
+
 # References
