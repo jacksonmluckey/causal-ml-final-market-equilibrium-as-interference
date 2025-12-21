@@ -10,19 +10,32 @@ dependencies = [
     "plotnine>=0.15.2",
     "polars>=1.36.1",
     "pyarrow>=22.0.0",
-    "pytest>=9.0.2",
     "scikit-learn>=1.7.2",
-    "scipy>=1.16.3",
-    "ipykernel>=7.1.0",
-    "jupyter>=1.1.1",
-    "quarto>=0.1.0"
+    "scipy>=1.16.3"
 ]
 
 [dependency-groups]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "docs"}
+]
+test = [
+    "pytest>=9.0.2",
+]
+lint = [
+    "ruff>=0.14.10",
+]
+
 docs = [
     "mkdocs>=1.6.0",
     "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.26.0",
+]
+notebooks = [
+    "ipykernel>=7.1.0",
+    "jupyter>=1.1.1",
+    "quarto>=0.1.0"
 ]
 
 [build-system]
@@ -37,3 +50,4 @@ where = ["src"]
 
 [tool.uv]
 package = true
+default-groups = "all"
