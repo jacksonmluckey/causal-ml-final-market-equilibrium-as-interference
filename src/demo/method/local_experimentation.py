@@ -891,13 +891,13 @@ def compute_optimal_zeta(n: int, alpha: float = 0.3) -> float:
     return base_zeta * (n ** (-alpha))
 
 
-def analyze_convergence(result: LearningResult, p_optimal: float) -> dict:
+def analyze_convergence(result: Experiment, p_optimal: float) -> dict:
     r"""
     Analyze convergence of the learning algorithm.
 
     Parameters
     ----------
-    result : LearningResult
+    result : Experiment
         Output from run_learning_algorithm
     p_optimal : float
         True optimal payment (for comparison)

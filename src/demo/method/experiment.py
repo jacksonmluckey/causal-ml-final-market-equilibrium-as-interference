@@ -425,7 +425,6 @@ def run_global_one_timepoint(
     # Compute equilibrium allocation
     current_d_a = state.d_a if state else d_a
     eq = compute_equilibrium_allocation(p, current_d_a, supplier_params, allocation)
-    mu_eq = eq.mu_eq
     q_eq = eq.q_eq
 
     # All suppliers get same payment
