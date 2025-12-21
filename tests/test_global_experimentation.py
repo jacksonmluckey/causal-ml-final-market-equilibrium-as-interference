@@ -12,7 +12,6 @@ import numpy as np
 import pytest
 from demo.method import (
     run_global_experimentation,
-    run_baseline_global_learning,  # Backwards compatibility
     fit_utility_spline,
     create_queue_allocation,
     create_linear_revenue,
@@ -93,35 +92,6 @@ def test_baseline_strategy_runs():
             np.isclose(p, result.results.final_payment, atol=1e-6)
             for p in exploitation_payments
         ), "Exploitation should use learned payment"
-
-
-def test_baseline_backwards_compatibility():
-    """Test that the backwards-compatible alias works."""
-    rng = np.random.default_rng(42)
-
-    allocation = create_queue_allocation(L=8)
-    revenue_fn = create_linear_revenue(gamma=100.0, allocation=allocation)
-    choice = create_logistic_choice(alpha=1.0)
-    costs = create_lognormal_costs()
-    supplier_params = SupplierParameters(choice=choice, private_features=costs)
-
-    # Use the backwards-compatible function
-    result = run_baseline_global_learning(
-        T=30,
-        T_explore=20,
-        n=100,
-        revenue_fn=revenue_fn,
-        allocation=allocation,
-        supplier_params=supplier_params,
-        d_a=0.5,
-        p_bounds=(0.5, 5.0),
-        rng=rng,
-        verbose=False,
-    )
-
-    # Should work just like the new wrapper
-    assert result.results is not None
-    assert len(result.results.timepoints) == 30
 
 
 def test_baseline_requires_T_explore():

@@ -89,6 +89,4 @@ __all__ = [
     "find_best_payment_from_history",
     "sample_exploration_payment",
     "compute_epsilon",
-    # Backwards Compatibility
-    "run_baseline_global_learning",
 ]

@@ -125,17 +125,6 @@ from .bandit_experimentation import (
 )
 
 
-# Backwards compatibility alias
-def run_baseline_global_learning(**kwargs):
-    """
-    Backwards-compatible alias for baseline global experimentation.
-
-    This function calls run_global_experimentation with strategy="baseline".
-    Use run_global_experimentation directly for new code.
-    """
-    return run_global_experimentation(strategy="baseline", **kwargs)
-
-
 __all__ = [
     # Utils
     "numerical_derivative",
@@ -221,6 +210,4 @@ __all__ = [
     "find_best_payment_from_history",
     "sample_exploration_payment",
     "compute_epsilon",
-    # Backwards Compatibility
-    "run_baseline_global_learning",
 ]
