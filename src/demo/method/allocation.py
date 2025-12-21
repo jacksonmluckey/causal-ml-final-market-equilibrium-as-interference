@@ -41,6 +41,7 @@ class AllocationFunction:
     name : str
         Descriptive name for the allocation function
     """
+
     omega: Callable[[float], float]
     omega_prime: Optional[Callable[[float], float]] = None
     name: str = "Generic"
@@ -95,8 +96,8 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
             return 1.0
         # Handle $x \approx 1$ separately to avoid numerical issues
         if abs(x - 1) < 1e-10:
-            return 1 - 1/L
-        x_L = x ** L
+            return 1 - 1 / L
+        x_L = x**L
         return (x - x_L) / (1 - x_L)
 
     def omega_prime(x: float) -> float:
@@ -113,16 +114,14 @@ def create_queue_allocation(L: int = 8) -> AllocationFunction:
             # Use L'Hopital's rule or series expansion near $x=1$
             # $\omega'(1) = (L-1)/(2L)$
             return (L - 1) / (2 * L)
-        x_L = x ** L
+        x_L = x**L
         x_Lm1 = x ** (L - 1)
         numerator = (1 - L * x_Lm1) * (1 - x_L) - (x - x_L) * (-L * x_Lm1)
         denominator = (1 - x_L) ** 2
         return numerator / denominator
 
     return AllocationFunction(
-        omega=omega,
-        omega_prime=omega_prime,
-        name=f"M/M/1 Queue (L={L})"
+        omega=omega, omega_prime=omega_prime, name=f"M/M/1 Queue (L={L})"
     )
 
 
@@ -137,20 +136,17 @@ def create_linear_allocation() -> AllocationFunction:
     AllocationFunction
         The linear allocation function
     """
+
     def omega(x: float) -> float:
         return min(max(x, 0), 1.0)
 
     def omega_prime(x: float) -> float:
         if 0 < x < 1:
-            return 1.0 
+            return 1.0
         else:
             return 0.0
 
-    return AllocationFunction(
-        omega=omega,
-        omega_prime=omega_prime,
-        name="Linear"
-    )
+    return AllocationFunction(omega=omega, omega_prime=omega_prime, name="Linear")
 
 
 def create_smooth_linear_allocation() -> AllocationFunction:
@@ -166,6 +162,7 @@ def create_smooth_linear_allocation() -> AllocationFunction:
     AllocationFunction
         The smooth linear allocation function
     """
+
     def omega(x: float) -> float:
         if x <= 0:
             return 0.0
@@ -179,9 +176,7 @@ def create_smooth_linear_allocation() -> AllocationFunction:
             return np.exp(-x)
 
     return AllocationFunction(
-        omega=omega,
-        omega_prime=omega_prime,
-        name="Smooth Linear"
+        omega=omega, omega_prime=omega_prime, name="Smooth Linear"
     )
 
 
@@ -202,9 +197,7 @@ def create_simple_allocation():
         return 1.0 / (1.0 + x) ** 2
 
     return AllocationFunction(
-        omega=omega,
-        omega_prime=omega_prime,
-        name="Simple Concave"
+        omega=omega, omega_prime=omega_prime, name="Simple Concave"
     )
 
 
@@ -213,7 +206,9 @@ def create_simple_allocation():
 # =============================================================================
 
 
-def compute_expected_allocation(allocation: AllocationFunction, mu: float, d_a: float) -> float:
+def compute_expected_allocation(
+    allocation: AllocationFunction, mu: float, d_a: float
+) -> float:
     r"""
     Compute expected allocation given fraction of active suppliers.
 
@@ -237,9 +232,7 @@ def compute_expected_allocation(allocation: AllocationFunction, mu: float, d_a: 
 
 
 def compute_expected_allocation_derivative(
-    allocation: AllocationFunction,
-    mu: float,
-    d_a: float
+    allocation: AllocationFunction, mu: float, d_a: float
 ) -> float:
     r"""
     Compute derivative of q with respect to $\mu$.
@@ -260,14 +253,12 @@ def compute_expected_allocation_derivative(
         return 0.0
     else:
         x = d_a / mu
-        return -allocation.derivative(x) * d_a / (mu ** 2)
+        return -allocation.derivative(x) * d_a / (mu**2)
 
 
 # TODO figure out if this is right
 def compute_total_demand_served(
-    allocation: AllocationFunction,
-    d: float,
-    t: float
+    allocation: AllocationFunction, d: float, t: float
 ) -> float:
     r"""
     Compute total demand served across all active suppliers.

@@ -32,6 +32,7 @@ Experiment = None
 # EXPERIMENT PARAMETERS
 # =============================================================================
 
+
 @dataclass
 class ExperimentParams:
     r"""
@@ -70,6 +71,7 @@ class ExperimentParams:
     store_detailed_data : bool
         Whether to store individual-level data (Z_i, ε_i arrays)
     """
+
     T: int
     n: int
     p_init: float
@@ -102,6 +104,7 @@ class ExperimentParams:
 # SUPPORTING DATACLASSES
 # =============================================================================
 
+
 @dataclass
 class DemandConfig:
     """
@@ -114,6 +117,7 @@ class DemandConfig:
     demand_params : Optional[DemandParameters]
         Full demand model with multiple states (if using stochastic model)
     """
+
     d_a: Optional[float]
     demand_params: Optional[DemandParameters]
 
@@ -130,6 +134,7 @@ class CurrentDemandState:
     d_a : float
         Expected demand per supplier for this period
     """
+
     state: Optional[GlobalState]
     d_a: float
 
@@ -146,6 +151,7 @@ class EquilibriumAllocation:
     q_eq : float
         Expected allocation per active supplier
     """
+
     mu_eq: float
     q_eq: float
 
@@ -154,9 +160,9 @@ class EquilibriumAllocation:
 # HELPER FUNCTIONS
 # =============================================================================
 
+
 def setup_rng(
-    rng: Optional[np.random.Generator] = None,
-    rng_seed: Optional[int] = None
+    rng: Optional[np.random.Generator] = None, rng_seed: Optional[int] = None
 ) -> np.random.Generator:
     """
     Initialize random number generator.
@@ -184,9 +190,7 @@ def setup_rng(
     return rng
 
 
-def extract_demand_from_params(
-    params: ExperimentParams
-) -> DemandConfig:
+def extract_demand_from_params(params: ExperimentParams) -> DemandConfig:
     """
     Extract demand configuration from ExperimentParams.
 
@@ -212,7 +216,7 @@ def extract_demand_from_params(
 def sample_current_state(
     demand_params: Optional[DemandParameters],
     d_a: Optional[float],
-    rng: np.random.Generator
+    rng: np.random.Generator,
 ) -> CurrentDemandState:
     """
     Sample or retrieve current demand state.
@@ -252,7 +256,7 @@ def compute_equilibrium_allocation(
     p: float,
     d_a: float,
     supplier_params: SupplierParameters,
-    allocation: AllocationFunction
+    allocation: AllocationFunction,
 ) -> EquilibriumAllocation:
     """
     Compute equilibrium supply and allocation at payment p.
@@ -281,16 +285,14 @@ def compute_equilibrium_allocation(
         d_a=d_a,
         choice=supplier_params.choice,
         private_features=supplier_params.private_features,
-        allocation=allocation
+        allocation=allocation,
     )
     q_eq = allocation(d_a / mu_eq) if mu_eq > 0 else 0.0
 
     return EquilibriumAllocation(mu_eq=mu_eq, q_eq=q_eq)
 
 
-def compute_weighted_average_payment(
-    timepoints: List
-) -> float:
+def compute_weighted_average_payment(timepoints: List) -> float:
     """
     Compute weighted average payment per Corollary 8.
 
@@ -324,7 +326,7 @@ def compute_weighted_average_payment(
 def build_experiment_results(
     timepoints: List,
     final_payment: float,
-    weighted_average_payment: Optional[float] = None
+    weighted_average_payment: Optional[float] = None,
 ):
     """
     Build ExperimentResults from timepoint data.
@@ -362,7 +364,7 @@ def build_experiment_results(
         average_payment=float(np.mean(payments)) if payments else 0.0,
         timepoints=timepoints,
         total_utility=total_utility,
-        mean_utility=mean_utility
+        mean_utility=mean_utility,
     )
 
     return results
@@ -378,7 +380,7 @@ def run_global_one_timepoint(
     d_a: Optional[float] = None,
     demand_params: Optional[DemandParameters] = None,
     state: Optional[GlobalState] = None,
-    rng: Optional[np.random.Generator] = None
+    rng: Optional[np.random.Generator] = None,
 ):
     r"""
     Run one period of global experimentation.
@@ -432,8 +434,11 @@ def run_global_one_timepoint(
     # Sample activations
     internal_seed = int(rng.integers(0, 2**31))
     Z = sample_supplier_activations(
-        n=n, payments=payments, expected_allocation=q_eq,
-        params=supplier_params, seed=internal_seed
+        n=n,
+        payments=payments,
+        expected_allocation=q_eq,
+        params=supplier_params,
+        seed=internal_seed,
     )
     T_active = int(Z.sum())
 
@@ -465,5 +470,5 @@ def run_global_one_timepoint(
         upsilon_hat=None,
         zeta=None,
         epsilon=None,
-        Z=None
+        Z=None,
     )

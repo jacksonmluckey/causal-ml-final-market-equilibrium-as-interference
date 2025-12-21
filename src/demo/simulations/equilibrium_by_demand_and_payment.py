@@ -3,7 +3,7 @@ from demo.method import (
     create_lognormal_costs,
     create_logistic_choice,
     compute_mean_field_equilibrium,
-    create_linear_revenue
+    create_linear_revenue,
 )
 from demo.utils import get_data_path
 import polars as pl
@@ -11,51 +11,75 @@ from itertools import product
 from concurrent.futures import ProcessPoolExecutor
 
 
-def compute_mean_field_equilibrium_wrapper(p, d_a, gamma, choice_params, private_features_params, allocation_params):
+def compute_mean_field_equilibrium_wrapper(
+    p, d_a, gamma, choice_params, private_features_params, allocation_params
+):
     # Recreate objects inside the worker process to avoid the pickling error or fucking up state
     choice = create_logistic_choice(**choice_params)
     private_features = create_lognormal_costs(**private_features_params)
     allocation = create_queue_allocation(**allocation_params)
-    revenue = create_linear_revenue(gamma = gamma, allocation = allocation)
-    return compute_mean_field_equilibrium(p, d_a, revenue, choice, private_features, allocation)
+    revenue = create_linear_revenue(gamma=gamma, allocation=allocation)
+    return compute_mean_field_equilibrium(
+        p, d_a, revenue, choice, private_features, allocation
+    )
 
 
-def main(d_a_values, p_values, gamma, choice_params, private_features_params, allocation_params):
+def main(
+    d_a_values,
+    p_values,
+    gamma,
+    choice_params,
+    private_features_params,
+    allocation_params,
+):
     # Find equilibrium with every combination of p and d_a
     params = list(product(p_values, d_a_values))
 
-    print(f'Running {len(params)} simulations')
-    
+    print(f"Running {len(params)} simulations")
+
     # Find equilibriums in parallel
     with ProcessPoolExecutor() as executor:
         futures = [
             executor.submit(
                 compute_mean_field_equilibrium_wrapper,
-                p = p,
-                d_a = d_a,
-                gamma = gamma,
-                choice_params = choice_params,
-                private_features_params = private_features_params,
-                allocation_params = allocation_params
+                p=p,
+                d_a=d_a,
+                gamma=gamma,
+                choice_params=choice_params,
+                private_features_params=private_features_params,
+                allocation_params=allocation_params,
             )
             for p, d_a in params
         ]
         equilibriums = [f.result() for f in futures]
 
     # Want: demand served, fraction of suppliers active, demand per active supplier
-    df = (pl.DataFrame(equilibriums)
-        .with_columns(demand_served = pl.col("mu") * pl.col("q")))
-    
-    path = get_data_path('equilibrium_by_demand_and_payment.csv')
+    df = pl.DataFrame(equilibriums).with_columns(
+        demand_served=pl.col("mu") * pl.col("q")
+    )
+
+    path = get_data_path("equilibrium_by_demand_and_payment.csv")
     df.write_csv(path)
-    print(f'Simulations saved to {path}')
+    print(f"Simulations saved to {path}")
 
 
 if __name__ == "__main__":
     d_a_values = [x / 100 for x in range(1, 100)]
     p_values = [x for x in range(1, 100)]
     gamma = 100
-    choice_params = {'alpha': 1}
-    private_features_params = {'log_mean': 0, 'log_std': 1, 'scale': 20, 'seed': 20251218}
-    allocation_params = {'L': 8}
-    main(d_a_values, p_values, gamma, choice_params, private_features_params, allocation_params)
+    choice_params = {"alpha": 1}
+    private_features_params = {
+        "log_mean": 0,
+        "log_std": 1,
+        "scale": 20,
+        "seed": 20251218,
+    }
+    allocation_params = {"L": 8}
+    main(
+        d_a_values,
+        p_values,
+        gamma,
+        choice_params,
+        private_features_params,
+        allocation_params,
+    )

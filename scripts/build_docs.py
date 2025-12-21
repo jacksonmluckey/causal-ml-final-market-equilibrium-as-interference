@@ -29,7 +29,8 @@ def generate_module_docs(src_dir: Path, api_dir: Path) -> list[str]:
 
     # Filter out __init__.py and __pycache__
     modules = [
-        f.stem for f in python_files
+        f.stem
+        for f in python_files
         if f.stem != "__init__" and not f.stem.startswith("_")
     ]
 

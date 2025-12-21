@@ -17,12 +17,13 @@ from dataclasses import dataclass
 class GlobalState:
     r"""
     Represents a global state A that affects demand.
-    
+
     Attributes:
         name: Identifier for the state (e.g., "sunny", "rainy")
         d_a: Expected demand per supplier when in this state
         probability: Probability of this state occurring
     """
+
     name: str
     d_a: float  # Expected demand per supplier
     probability: float = 1.0
@@ -37,6 +38,7 @@ class DemandParameters:
         states: Dictionary mapping state names to GlobalState objects
         concentration_param: Controls how tightly D/n concentrates around d_a
     """
+
     states: Dict[str, GlobalState]
     concentration_param: float = 50.0
 
@@ -50,8 +52,7 @@ def normalize_probabilities(states: Dict[str, GlobalState]) -> Dict[str, float]:
 
 
 def sample_state(
-    model: DemandParameters,
-    rng: np.random.Generator | None = None
+    model: DemandParameters, rng: np.random.Generator | None = None
 ) -> GlobalState:
     r"""Sample a global state A according to the state probabilities."""
     if rng is None:
@@ -76,16 +77,16 @@ def sample_demand(
     model: DemandParameters,
     state: GlobalState,
     n: int,
-    rng: np.random.Generator | None = None
+    rng: np.random.Generator | None = None,
 ) -> int:
     r"""
     Sample demand D given global state and market size.
-    
+
     The demand satisfies:
     - $E[D/n | A=a] = d_a$
     - $D/n$ concentrates on d_a as $n \rightarrow \infty`
 
-    Uses a Beta distribution scaled to have mean n * d_a and 
+    Uses a Beta distribution scaled to have mean n * d_a and
     variance that decreases with n (satisfying concentration property 3.1).
 
     This ennsures concentration while allowing for realistic variance in finite markets.
@@ -103,7 +104,7 @@ def sample_demand(
         alpha, beta = calculate_beta_params(d_a, k)
         scaled_demand = rng.beta(alpha, beta)
     else:
-        scaled_demand = rng.gamma(shape=k, scale=d_a/k)
+        scaled_demand = rng.gamma(shape=k, scale=d_a / k)
 
     D = int(round(n * scaled_demand))
     return max(0, D)

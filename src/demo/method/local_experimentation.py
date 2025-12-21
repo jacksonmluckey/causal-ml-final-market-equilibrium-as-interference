@@ -31,19 +31,10 @@ from .supplier import (
     PrivateFeatureDistribution,
     SupplierParameters,
     sample_supplier_activations,
-    compute_expected_choice_probability
+    compute_expected_choice_probability,
 )
-from .demand import (
-    DemandParameters,
-    GlobalState,
-    sample_state,
-    sample_demand
-)
-from .experiment_results import (
-    TimePointData,
-    ExperimentResults,
-    Experiment
-)
+from .demand import DemandParameters, GlobalState, sample_state, sample_demand
+from .experiment_results import TimePointData, ExperimentResults, Experiment
 from .experiment import (
     ExperimentParams,
     setup_rng,
@@ -51,7 +42,7 @@ from .experiment import (
     sample_current_state,
     compute_equilibrium_allocation,
     compute_weighted_average_payment,
-    build_experiment_results
+    build_experiment_results,
 )
 
 
@@ -62,8 +53,7 @@ from .experiment import (
 
 
 def generate_payment_perturbations(
-    n: int,
-    rng: Optional[np.random.Generator] = None
+    n: int, rng: Optional[np.random.Generator] = None
 ) -> np.ndarray:
     r"""
     Generate symmetric payment perturbations $\varepsilon_i \in \{-1, +1\}$.
@@ -102,7 +92,7 @@ def run_local_experiment(
     demand_params: Optional[DemandParameters] = None,
     state: Optional[GlobalState] = None,
     store_detailed_data: bool = False,
-    rng: Optional[np.random.Generator] = None
+    rng: Optional[np.random.Generator] = None,
 ) -> TimePointData:
     r"""
     Run one period of local experimentation.
@@ -160,15 +150,15 @@ def run_local_experiment(
     """
     if rng is None:
         rng = np.random.default_rng()
-    
+
     # Step 1: Generate perturbations $\varepsilon_i \in \{-1, +1\}$
     epsilon = rng.choice([-1, 1], size=n)
-    
+
     # Step 2: Set payments
     payments = p + zeta * epsilon
-    
+
     # Step 3: Suppliers make activation decisions
-    # Note: sample_supplier_activations uses np.random internally, 
+    # Note: sample_supplier_activations uses np.random internally,
     # so we set the seed from our rng for consistency
     internal_seed = int(rng.integers(0, 2**31))
     Z = sample_supplier_activations(
@@ -176,9 +166,9 @@ def run_local_experiment(
         payments=payments,
         expected_allocation=expected_allocation,
         params=supplier_params,
-        seed=internal_seed
+        seed=internal_seed,
     )
-    
+
     # Step 4: Determine demand D
     if D is not None:
         # Use provided demand
@@ -191,7 +181,7 @@ def run_local_experiment(
         D = int(round(n * d_a))
     else:
         raise ValueError("Must provide D, (demand_params + state), or d_a")
-    
+
     T = int(Z.sum())
 
     # Step 5: Compute demand served and utility
@@ -216,7 +206,7 @@ def run_local_experiment(
         upsilon_hat=None,
         zeta=zeta,
         epsilon=epsilon if store_detailed_data else None,
-        Z=Z if store_detailed_data else None
+        Z=Z if store_detailed_data else None,
     )
 
 
@@ -255,7 +245,7 @@ def estimate_delta_hat(data: TimePointData, n: int) -> float:
     cov_Z_epsilon = np.mean(Z_centered * epsilon_centered)
 
     # $\text{Var}(\varepsilon) = (1/n) \cdot \sum(\varepsilon_i - \bar{\varepsilon})^2$
-    var_epsilon = np.mean(epsilon_centered ** 2)
+    var_epsilon = np.mean(epsilon_centered**2)
 
     # $\hat{\Delta} = \zeta^{-1} \cdot \text{Cov}(Z, \varepsilon) / \text{Var}(\varepsilon)$
     if var_epsilon < 1e-10:
@@ -267,10 +257,7 @@ def estimate_delta_hat(data: TimePointData, n: int) -> float:
 
 
 def estimate_upsilon_hat(
-    delta_hat: float,
-    data: TimePointData,
-    n: int,
-    allocation: AllocationFunction
+    delta_hat: float, data: TimePointData, n: int, allocation: AllocationFunction
 ) -> float:
     r"""
     Estimate the supply gradient $\hat{\Upsilon} \approx \mu'(p)$.
@@ -324,7 +311,7 @@ def estimate_gamma_hat(
     n: int,
     allocation: AllocationFunction,
     revenue_fn: Callable[[float], float],
-    revenue_fn_prime: Callable[[float], float]
+    revenue_fn_prime: Callable[[float], float],
 ) -> float:
     r"""
     Estimate the utility gradient $\hat{\Gamma} \approx du(p)/dp$.
@@ -394,6 +381,7 @@ class GradientEstimate:
     Z_bar : float
         Observed scaled active supply
     """
+
     delta_hat: float
     upsilon_hat: float
     gamma_hat: float
@@ -405,7 +393,7 @@ def estimate_utility_gradient(
     data: TimePointData,
     n: int,
     allocation: AllocationFunction,
-    revenue_fn: RevenueFunction
+    revenue_fn: RevenueFunction,
 ) -> GradientEstimate:
     r"""
     Complete gradient estimation from local experiment data.
@@ -434,10 +422,7 @@ def estimate_utility_gradient(
 
     # Step 2: Estimate $\hat{\Upsilon}$ (equation 4.2)
     upsilon_hat = estimate_upsilon_hat(
-        delta_hat=delta_hat,
-        data=data,
-        n=n,
-        allocation=allocation
+        delta_hat=delta_hat, data=data, n=n, allocation=allocation
     )
 
     # Step 3: Estimate $\hat{\Gamma}$ (equation 4.3)
@@ -447,7 +432,7 @@ def estimate_utility_gradient(
         n=n,
         allocation=allocation,
         revenue_fn=revenue_fn.r,
-        revenue_fn_prime=revenue_fn.r_prime
+        revenue_fn_prime=revenue_fn.r_prime,
     )
 
     D_bar = data.D / n
@@ -458,7 +443,7 @@ def estimate_utility_gradient(
         upsilon_hat=upsilon_hat,
         gamma_hat=gamma_hat,
         D_bar=D_bar,
-        Z_bar=Z_bar
+        Z_bar=Z_bar,
     )
 
 
@@ -466,11 +451,12 @@ def estimate_utility_gradient(
 # SECTION 4.2: A FIRST-ORDER ALGORITHM
 # =============================================================================
 
+
 @dataclass
 class OptimizationState:
     r"""
     State of the first-order optimization algorithm.
-    
+
     Attributes
     ----------
     t : int
@@ -484,6 +470,7 @@ class OptimizationState:
     payment_history : List[float]
         History of payment levels $p_t$
     """
+
     t: int
     p: float
     theta: float
@@ -492,8 +479,7 @@ class OptimizationState:
 
 
 def initialize_optimizer(
-    p_init: float,
-    p_bounds: Tuple[float, float] = (0.0, float('inf'))
+    p_init: float, p_bounds: Tuple[float, float] = (0.0, float("inf"))
 ) -> OptimizationState:
     r"""
     Initialize the first-order optimization algorithm.
@@ -517,7 +503,7 @@ def initialize_optimizer(
         p=np.clip(p_init, p_bounds[0], p_bounds[1]),
         theta=0.0,
         gradient_history=[],
-        payment_history=[p_init]
+        payment_history=[p_init],
     )
 
 
@@ -525,7 +511,7 @@ def mirror_descent_update(
     state: OptimizationState,
     gradient: float,
     eta: float,
-    p_bounds: Tuple[float, float] = (0.0, float('inf'))
+    p_bounds: Tuple[float, float] = (0.0, float("inf")),
 ) -> OptimizationState:
     r"""
     Perform one step of the mirror descent update.
@@ -577,17 +563,17 @@ def mirror_descent_update(
 
     # Project onto interval $I = [c_-, c_+]$
     p_new = np.clip(p_new, c_minus, c_plus)
-    
+
     # Update histories
     gradient_history = state.gradient_history + [gradient]
     payment_history = state.payment_history + [p_new]
-    
+
     return OptimizationState(
         t=t + 1,
         p=p_new,
         theta=theta_new,
         gradient_history=gradient_history,
-        payment_history=payment_history
+        payment_history=payment_history,
     )
 
 
@@ -596,7 +582,7 @@ def run_learning_algorithm(
     *,
     params: ExperimentParams,
     rng: Optional[np.random.Generator] = None,
-    verbose: bool = False
+    verbose: bool = False,
 ) -> Experiment: ...
 
 
@@ -612,14 +598,14 @@ def run_learning_algorithm(
     supplier_params: SupplierParameters,
     d_a: Optional[float] = None,
     demand_params: Optional[DemandParameters] = None,
-    p_bounds: Tuple[float, float] = (0.0, float('inf')),
+    p_bounds: Tuple[float, float] = (0.0, float("inf")),
     alpha: float = 0.3,
     store_detailed_data: bool = False,
     rng: Optional[np.random.Generator] = None,
     rng_seed: Optional[int] = None,
     verbose: bool = False,
     *,
-    params: None = None
+    params: None = None,
 ) -> Experiment: ...
 
 
@@ -641,7 +627,7 @@ def run_learning_algorithm(
     rng_seed: Optional[int] = None,
     verbose: bool = False,
     *,
-    params: Optional[ExperimentParams] = None
+    params: Optional[ExperimentParams] = None,
 ) -> Experiment:
     r"""
     Run the complete learning algorithm from Section 4.2.
@@ -725,13 +711,16 @@ def run_learning_algorithm(
         d_a = demand_config.d_a
     else:
         # Validate that required parameters are provided
-        if any(x is None for x in [T, n, p_init, eta, zeta, revenue_fn, allocation, supplier_params]):
+        if any(
+            x is None
+            for x in [T, n, p_init, eta, zeta, revenue_fn, allocation, supplier_params]
+        ):
             raise ValueError(
                 "When params is not provided, all of T, n, p_init, eta, zeta, "
                 "revenue_fn, allocation, and supplier_params must be provided"
             )
         if p_bounds is None:
-            p_bounds = (0.0, float('inf'))
+            p_bounds = (0.0, float("inf"))
 
     # Setup RNG
     rng = setup_rng(rng, rng_seed)
@@ -756,7 +745,7 @@ def run_learning_algorithm(
             alpha=alpha,
             delta=None,
             rng_seed=rng_seed,
-            store_detailed_data=store_detailed_data
+            store_detailed_data=store_detailed_data,
         )
 
     # Initialize optimizer
@@ -780,7 +769,7 @@ def run_learning_algorithm(
             p=opt_state.p,
             d_a=current_d_a,
             supplier_params=supplier_params,
-            allocation=allocation
+            allocation=allocation,
         )
         q_eq = eq.q_eq
 
@@ -798,7 +787,7 @@ def run_learning_algorithm(
             demand_params=demand_params,
             state=current_state,
             store_detailed_data=True,
-            rng=rng
+            rng=rng,
         )
 
         # Estimate gradients
@@ -813,10 +802,7 @@ def run_learning_algorithm(
 
         # Update payment via mirror descent
         opt_state = mirror_descent_update(
-            state=opt_state,
-            gradient=grad_est.gamma_hat,
-            eta=eta,
-            p_bounds=p_bounds
+            state=opt_state, gradient=grad_est.gamma_hat, eta=eta, p_bounds=p_bounds
         )
 
     # Compute weighted average (Corollary 8)
@@ -826,7 +812,7 @@ def run_learning_algorithm(
     results = build_experiment_results(
         timepoints=timepoints,
         final_payment=opt_state.p,
-        weighted_average_payment=weighted_avg
+        weighted_average_payment=weighted_avg,
     )
 
     return Experiment(params=params, results=results)
@@ -836,12 +822,9 @@ def run_learning_algorithm(
 # SECTION 4.3: COST OF EXPERIMENTATION
 # =============================================================================
 
+
 def compute_experimentation_cost(
-    p: float,
-    zeta: float,
-    d_a: float,
-    mu: float,
-    allocation: AllocationFunction
+    p: float, zeta: float, d_a: float, mu: float, allocation: AllocationFunction
 ) -> float:
     r"""
     Compute the cost of experimentation (Theorem 9).
@@ -888,6 +871,7 @@ def compute_experimentation_cost(
 # UTILITY FUNCTIONS FOR ANALYSIS
 # =============================================================================
 
+
 def compute_optimal_zeta(n: int, alpha: float = 0.3) -> float:
     r"""
     Compute optimal perturbation magnitude $\zeta_n$.
@@ -911,20 +895,17 @@ def compute_optimal_zeta(n: int, alpha: float = 0.3) -> float:
     return base_zeta * (n ** (-alpha))
 
 
-def analyze_convergence(
-    result: LearningResult,
-    p_optimal: float
-) -> dict:
+def analyze_convergence(result: LearningResult, p_optimal: float) -> dict:
     r"""
     Analyze convergence of the learning algorithm.
-    
+
     Parameters
     ----------
     result : LearningResult
         Output from run_learning_algorithm
     p_optimal : float
         True optimal payment (for comparison)
-        
+
     Returns
     -------
     dict
@@ -932,20 +913,20 @@ def analyze_convergence(
     """
     payments = np.array(result.payment_history)
     T = len(payments) - 1
-    
+
     # Compute regret trajectory
-    regret = (p_optimal - payments[:-1])**2
-    
+    regret = (p_optimal - payments[:-1]) ** 2
+
     # Compute weighted regret (as in Theorem 7)
     weights = np.arange(1, T + 1)
     weighted_regret = np.sum(weights * regret) / (T * (T + 1) / 2)
-    
+
     return {
-        'final_payment': result.final_payment,
-        'weighted_average': result.weighted_average_payment,
-        'optimal_payment': p_optimal,
-        'final_error': abs(result.final_payment - p_optimal),
-        'weighted_error': abs(result.weighted_average_payment - p_optimal),
-        'mean_squared_error': np.mean(regret),
-        'weighted_regret': weighted_regret
+        "final_payment": result.final_payment,
+        "weighted_average": result.weighted_average_payment,
+        "optimal_payment": p_optimal,
+        "final_error": abs(result.final_payment - p_optimal),
+        "weighted_error": abs(result.weighted_average_payment - p_optimal),
+        "mean_squared_error": np.mean(regret),
+        "weighted_regret": weighted_regret,
     }

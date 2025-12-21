@@ -24,7 +24,9 @@ def run_python_import(code: str) -> tuple[bool, str]:
 def main():
     project_root = Path(__file__).parent.parent
     pyproject_path = project_root / "pyproject.toml"
-    pth_file = list(project_root.glob(".venv/lib/python*/site-packages/__editable__.demo-*.pth"))
+    pth_file = list(
+        project_root.glob(".venv/lib/python*/site-packages/__editable__.demo-*.pth")
+    )
 
     print("=" * 60)
     print("Diagnostic Test for Intermittent ModuleNotFoundError")
@@ -46,7 +48,7 @@ def main():
     print("\n[Test 2] Checking sys.path...")
     _, paths = run_python_import("import sys; print('\\n'.join(sys.path))")
     print("Python path entries:")
-    for line in paths.strip().split('\n'):
+    for line in paths.strip().split("\n"):
         print(f"  {line}")
 
     # Test 3: Check .pth file
@@ -64,14 +66,18 @@ def main():
     pyproject_path.touch()
     print(f"Touched {pyproject_path}")
 
-    success, output = run_python_import("import demo; print('SUCCESS: demo imported after touch')")
+    success, output = run_python_import(
+        "import demo; print('SUCCESS: demo imported after touch')"
+    )
 
     if success:
         print("Import succeeded after touching pyproject.toml!")
         print(f"Output: {output.strip()}")
         print("\n" + "=" * 60)
         print("Touching pyproject.toml fixes the import issue.")
-        print("For whatever reason uv run only reinstalls when pyproject.toml is newer.")
+        print(
+            "For whatever reason uv run only reinstalls when pyproject.toml is newer."
+        )
         print("=" * 60)
     else:
         print("✗ Import still failed after touching pyproject.toml")

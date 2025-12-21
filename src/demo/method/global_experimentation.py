@@ -26,24 +26,20 @@ from .allocation import AllocationFunction
 from .revenue import RevenueFunction
 from .supplier import SupplierParameters
 from .demand import DemandParameters, GlobalState
-from .experiment_results import (
-    TimePointData,
-    ExperimentResults,
-    Experiment
-)
+from .experiment_results import TimePointData, ExperimentResults, Experiment
 from .experiment import (
     ExperimentParams,
     setup_rng,
     extract_demand_from_params,
     sample_current_state,
     build_experiment_results,
-    run_global_one_timepoint
+    run_global_one_timepoint,
 )
 from .bandit_experimentation import (
     fit_utility_spline,
     find_best_payment_from_history,
     sample_exploration_payment,
-    compute_epsilon
+    compute_epsilon,
 )
 
 
@@ -59,7 +55,7 @@ def run_global_experimentation(
     exploration_strategy: Optional[str] = None,
     step_size_pct: Optional[float] = None,
     rng: Optional[np.random.Generator] = None,
-    verbose: bool = False
+    verbose: bool = False,
 ) -> Experiment: ...
 
 
@@ -73,7 +69,7 @@ def run_global_experimentation(
     supplier_params: SupplierParameters,
     d_a: Optional[float] = None,
     demand_params: Optional[DemandParameters] = None,
-    p_bounds: Tuple[float, float] = (0.0, float('inf')),
+    p_bounds: Tuple[float, float] = (0.0, float("inf")),
     p_init: Optional[float] = None,
     T_explore: Optional[int] = None,
     epsilon: Optional[float] = None,
@@ -85,7 +81,7 @@ def run_global_experimentation(
     rng_seed: Optional[int] = None,
     verbose: bool = False,
     *,
-    params: None = None
+    params: None = None,
 ) -> Experiment: ...
 
 
@@ -110,7 +106,7 @@ def run_global_experimentation(
     rng_seed: Optional[int] = None,
     verbose: bool = False,
     *,
-    params: Optional[ExperimentParams] = None
+    params: Optional[ExperimentParams] = None,
 ) -> Experiment:
     r"""
     Run global experimentation with specified bandit strategy.
@@ -170,19 +166,40 @@ def run_global_experimentation(
     # Dispatch to strategy-specific implementation
     if strategy == "baseline":
         return _run_baseline_strategy(
-            T=T, n=n, revenue_fn=revenue_fn, allocation=allocation,
-            supplier_params=supplier_params, d_a=d_a, demand_params=demand_params,
-            p_bounds=p_bounds, T_explore=T_explore,
-            rng=rng, rng_seed=rng_seed, verbose=verbose, params=params
+            T=T,
+            n=n,
+            revenue_fn=revenue_fn,
+            allocation=allocation,
+            supplier_params=supplier_params,
+            d_a=d_a,
+            demand_params=demand_params,
+            p_bounds=p_bounds,
+            T_explore=T_explore,
+            rng=rng,
+            rng_seed=rng_seed,
+            verbose=verbose,
+            params=params,
         )
     elif strategy == "epsilon_greedy":
         return _run_epsilon_greedy_strategy(
-            T=T, n=n, revenue_fn=revenue_fn, allocation=allocation,
-            supplier_params=supplier_params, d_a=d_a, demand_params=demand_params,
-            p_bounds=p_bounds, p_init=p_init,
-            epsilon=epsilon, epsilon_decay=epsilon_decay, decay_rate=decay_rate,
-            exploration_strategy=exploration_strategy, step_size_pct=step_size_pct,
-            rng=rng, rng_seed=rng_seed, verbose=verbose, params=params
+            T=T,
+            n=n,
+            revenue_fn=revenue_fn,
+            allocation=allocation,
+            supplier_params=supplier_params,
+            d_a=d_a,
+            demand_params=demand_params,
+            p_bounds=p_bounds,
+            p_init=p_init,
+            epsilon=epsilon,
+            epsilon_decay=epsilon_decay,
+            decay_rate=decay_rate,
+            exploration_strategy=exploration_strategy,
+            step_size_pct=step_size_pct,
+            rng=rng,
+            rng_seed=rng_seed,
+            verbose=verbose,
+            params=params,
         )
     # elif strategy == "ucb":
     #     # TODO: Implement UCB strategy
@@ -191,7 +208,9 @@ def run_global_experimentation(
     #     # TODO: Implement Thompson Sampling strategy
     #     raise NotImplementedError("Thompson Sampling strategy not yet implemented")
     else:
-        raise ValueError(f"Unknown strategy: {strategy}. Choose from: 'baseline', 'epsilon_greedy'")
+        raise ValueError(
+            f"Unknown strategy: {strategy}. Choose from: 'baseline', 'epsilon_greedy'"
+        )
 
 
 def _run_baseline_strategy(
@@ -208,7 +227,7 @@ def _run_baseline_strategy(
     rng_seed: Optional[int] = None,
     verbose: bool = False,
     *,
-    params: Optional[ExperimentParams] = None
+    params: Optional[ExperimentParams] = None,
 ) -> Experiment:
     r"""
     Run baseline global experimentation with two-phase approach.
@@ -250,7 +269,7 @@ def _run_baseline_strategy(
                 "revenue_fn, allocation, and supplier_params must be provided"
             )
         if p_bounds is None:
-            p_bounds = (0.0, float('inf'))
+            p_bounds = (0.0, float("inf"))
 
     # Check T_explore separately
     if T_explore is None:
@@ -283,7 +302,7 @@ def _run_baseline_strategy(
             delta=None,
             rng_seed=rng_seed,
             store_detailed_data=False,
-            T_explore=T_explore
+            T_explore=T_explore,
         )
 
     timepoints: List[TimePointData] = []
@@ -319,7 +338,7 @@ def _run_baseline_strategy(
             d_a=current_d_a,
             demand_params=demand_params,
             state=state,
-            rng=rng
+            rng=rng,
         )
 
         # Step 4: Store (p_t, U_t)
@@ -337,9 +356,7 @@ def _run_baseline_strategy(
     utilities_array = np.array(exploration_utilities)
 
     spline, p_hat = fit_utility_spline(
-        payments=payments_array,
-        utilities=utilities_array,
-        p_bounds=p_bounds
+        payments=payments_array, utilities=utilities_array, p_bounds=p_bounds
     )
 
     if verbose:
@@ -349,7 +366,7 @@ def _run_baseline_strategy(
     # PHASE 2: EXPLOITATION
     # =========================================================================
     if verbose:
-        print(f"\nPhase 2: Exploitation (t={T_explore+1} to {T})")
+        print(f"\nPhase 2: Exploitation (t={T_explore + 1} to {T})")
 
     for t in range(T_explore + 1, T + 1):
         if verbose and t % 20 == 0:
@@ -371,7 +388,7 @@ def _run_baseline_strategy(
             d_a=current_d_a,
             demand_params=demand_params,
             state=state,
-            rng=rng
+            rng=rng,
         )
 
         timepoints.append(timepoint)
@@ -382,7 +399,7 @@ def _run_baseline_strategy(
     results = build_experiment_results(
         timepoints=timepoints,
         final_payment=p_hat,
-        weighted_average_payment=None  # Not used for baseline
+        weighted_average_payment=None,  # Not used for baseline
     )
 
     return Experiment(params=params, results=results)
@@ -407,7 +424,7 @@ def _run_epsilon_greedy_strategy(
     rng_seed: Optional[int] = None,
     verbose: bool = False,
     *,
-    params: Optional[ExperimentParams] = None
+    params: Optional[ExperimentParams] = None,
 ) -> Experiment:
     r"""
     Run epsilon-greedy global experimentation.
@@ -445,7 +462,7 @@ def _run_epsilon_greedy_strategy(
                 "revenue_fn, allocation, and supplier_params must be provided"
             )
         if p_bounds is None:
-            p_bounds = (0.0, float('inf'))
+            p_bounds = (0.0, float("inf"))
 
     # Check p_init
     if p_init is None:
@@ -482,7 +499,7 @@ def _run_epsilon_greedy_strategy(
             alpha=None,
             delta=None,
             rng_seed=rng_seed,
-            store_detailed_data=False
+            store_detailed_data=False,
         )
 
     # History tracking
@@ -495,7 +512,9 @@ def _run_epsilon_greedy_strategy(
 
     if verbose:
         decay_str = f" with {epsilon_decay} decay" if epsilon_decay else ""
-        print(f"Epsilon-Greedy Strategy (ε={epsilon}{decay_str}, strategy={exploration_strategy})")
+        print(
+            f"Epsilon-Greedy Strategy (ε={epsilon}{decay_str}, strategy={exploration_strategy})"
+        )
 
     # =========================================================================
     # MAIN LOOP
@@ -515,7 +534,7 @@ def _run_epsilon_greedy_strategy(
                 p_bounds=p_bounds,
                 strategy=exploration_strategy,
                 step_size_pct=step_size_pct,
-                rng=rng
+                rng=rng,
             )
         else:
             # EXPLOIT: Use best payment from history
@@ -537,7 +556,7 @@ def _run_epsilon_greedy_strategy(
             d_a=current_d_a,
             demand_params=demand_params,
             state=state,
-            rng=rng
+            rng=rng,
         )
 
         # Step 5: Update history
@@ -550,9 +569,7 @@ def _run_epsilon_greedy_strategy(
             p_best = p_t
         else:
             # Use the payment with historically highest utility
-            p_best = find_best_payment_from_history(
-                payment_history, utility_history
-            )
+            p_best = find_best_payment_from_history(payment_history, utility_history)
 
     # =========================================================================
     # BUILD RESULTS
@@ -565,7 +582,7 @@ def _run_epsilon_greedy_strategy(
     results = build_experiment_results(
         timepoints=timepoints,
         final_payment=final_payment,
-        weighted_average_payment=None
+        weighted_average_payment=None,
     )
 
     return Experiment(params=params, results=results)

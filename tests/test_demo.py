@@ -42,14 +42,14 @@ class TestAllocationFunctions:
 
         # Test boundary conditions
         assert allocation(0) == 0.0
-        assert allocation(1.0) == pytest.approx(1 - 1/8)
+        assert allocation(1.0) == pytest.approx(1 - 1 / 8)
         assert allocation(10.0) == pytest.approx(1.0)
 
         # Test non-decreasing
         x_values = [0.1, 0.5, 1.0, 1.5, 2.0]
         omega_values = [allocation(x) for x in x_values]
         for i in range(len(omega_values) - 1):
-            assert omega_values[i] <= omega_values[i+1]
+            assert omega_values[i] <= omega_values[i + 1]
 
     def test_linear_allocation(self):
         """Test linear allocation function."""
@@ -131,7 +131,6 @@ class TestSupplierParameters:
         assert all(s > 0 for s in samples)
         assert len(samples) == 100
 
-
     def test_activation_probability(self):
         """Test activation probability computation."""
         choice = create_logistic_choice(alpha=1.0)
@@ -169,7 +168,6 @@ class TestMarketPlatform:
             r_val = revenue_fn.r(x)
             expected = gamma * allocation(x)
             assert r_val == pytest.approx(expected)
-
 
     def test_equilibrium_computation(self):
         """Test equilibrium activation rate computation."""

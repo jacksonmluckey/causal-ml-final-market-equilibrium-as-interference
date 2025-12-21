@@ -15,8 +15,8 @@ from dataclasses import dataclass
 
 from .allocation import (
     AllocationFunction,
-    #compute_omega,
-    #compute_omega_derivative,
+    # compute_omega,
+    # compute_omega_derivative,
 )
 
 
@@ -38,12 +38,15 @@ class RevenueFunction:
     name : str
         Descriptive name
     """
+
     r: Callable[[float], float]
     r_prime: Optional[Callable[[float], float]] = None
     name: str = "Generic"
 
 
-def create_linear_revenue(gamma: float, allocation: AllocationFunction) -> RevenueFunction:
+def create_linear_revenue(
+    gamma: float, allocation: AllocationFunction
+) -> RevenueFunction:
     r"""
     Create linear revenue function.
 
@@ -65,6 +68,7 @@ def create_linear_revenue(gamma: float, allocation: AllocationFunction) -> Reven
     RevenueFunction
         The linear revenue function
     """
+
     def r(x: float) -> float:
         r"""$r(x) = \gamma \cdot \omega(x)$"""
         return gamma * allocation(x)
@@ -73,8 +77,4 @@ def create_linear_revenue(gamma: float, allocation: AllocationFunction) -> Reven
         r"""$dr/dx = \gamma \cdot \omega'(x)$"""
         return gamma * allocation.derivative(x)
 
-    return RevenueFunction(
-        r=r,
-        r_prime=r_prime,
-        name=f"Linear ($\\gamma$={gamma})"
-    )
+    return RevenueFunction(r=r, r_prime=r_prime, name=f"Linear ($\\gamma$={gamma})")

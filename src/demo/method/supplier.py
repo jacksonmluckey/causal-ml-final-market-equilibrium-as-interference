@@ -26,15 +26,15 @@ from .utils import numerical_derivative
 class ChoiceFunction:
     r"""
     Supplier choice function f_b(x) as described in Section 3 Assumption 2.
-    
+
     The choice function maps expected revenue x to the probability of
     becoming active, given private feature b (e.g., outside option).
-    
+
     Properties (Assumption 2):
         - Takes values in [0, 1]
         - Monotonically non-decreasing
         - Twice differentiable with bounded second derivative
-    
+
     Parameters
     ----------
     f : Callable[[float, float], float]
@@ -44,24 +44,25 @@ class ChoiceFunction:
     name : str
         Descriptive name
     """
+
     f: Callable[[float, float], float]
     f_prime: Optional[Callable[[float, float], float]] = None
     name: str = "Generic"
-    
+
     def __call__(self, x: float, b: float) -> float:
         r"""
         Calculate choice probability given expected revenue x and private feature by
         evaluating f_b(x) = P(active | expected_revenue=x, private_feature=b).
-        
+
         Args:
             x: Expected revenue (= payment * expected allocation)
             b: Private feature (e.g., cost threshold)
-            
+
         Returns:
             Probability in [0, 1] of becoming active
         """
         return self.f(x, b)
-    
+
     def derivative(self, x: float, b: float) -> float:
         r"""
         Takes the derivative df/dx of choice function with respect to expected revenue.
@@ -101,6 +102,7 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
     ChoiceFunction
         The logistic choice function
     """
+
     def f(x: float, b: float) -> float:
         r"""
         Logistic choice probability.
@@ -127,11 +129,7 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
         prob = f(x, b)
         return alpha * prob * (1.0 - prob)
 
-    return ChoiceFunction(
-        f=f,
-        f_prime=f_prime,
-        name=f"Logistic ($\\alpha$={alpha})"
-    )
+    return ChoiceFunction(f=f, f_prime=f_prime, name=f"Logistic ($\\alpha$={alpha})")
 
 
 @dataclass
@@ -151,6 +149,7 @@ class PrivateFeatureDistribution:
     name : str
         Descriptive name
     """
+
     sample: Callable[[int], np.ndarray]
     name: str = "Generic"
 
@@ -159,7 +158,7 @@ def create_lognormal_costs(
     log_mean: float = 0.0,
     log_std: float = 1.0,
     scale: float = 20.0,
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
 ) -> PrivateFeatureDistribution:
     r"""
     Create lognormal distribution for supplier costs.
@@ -189,14 +188,12 @@ def create_lognormal_costs(
 
     return PrivateFeatureDistribution(
         sample=sample,
-        name=f"LogNormal($\\mu$={log_mean}, $\\sigma$={log_std}, scale={scale})"
+        name=f"LogNormal($\\mu$={log_mean}, $\\sigma$={log_std}, scale={scale})",
     )
 
 
 def create_uniform_costs(
-    low: float = 5.0,
-    high: float = 50.0,
-    seed: Optional[int] = None
+    low: float = 5.0, high: float = 50.0, seed: Optional[int] = None
 ) -> PrivateFeatureDistribution:
     r"""
     Create uniform distribution for supplier costs.
@@ -217,17 +214,14 @@ def create_uniform_costs(
     def sample(n: int) -> np.ndarray:
         return rng.uniform(low, high, n)
 
-    return PrivateFeatureDistribution(
-        sample=sample,
-        name=f"Uniform({low}, {high})"
-    )
+    return PrivateFeatureDistribution(sample=sample, name=f"Uniform({low}, {high})")
 
 
 def compute_expected_choice_probability(
     revenue: float,
     choice: ChoiceFunction,
     private_features: PrivateFeatureDistribution,
-    n_samples: int = 10000
+    n_samples: int = 10000,
 ) -> float:
     r"""
     Compute $E[f_B(x)]$ via Monte Carlo.
@@ -260,7 +254,7 @@ def compute_expected_choice_derivative(
     x: float,
     choice: ChoiceFunction,
     private_features: PrivateFeatureDistribution,
-    n_samples: int = 10000
+    n_samples: int = 10000,
 ) -> float:
     r"""
     Compute $E[f'_B(x)]$ via Monte Carlo.
@@ -300,14 +294,13 @@ class SupplierParameters:
     private_features : PrivateFeatureDistribution
         Distribution of $B_i$ (outside options/costs)
     """
+
     choice: ChoiceFunction
     private_features: PrivateFeatureDistribution
 
 
 def compute_activation_probability(
-    supplier_params: SupplierParameters,
-    expected_revenue: float,
-    n_monte_carlo: int
+    supplier_params: SupplierParameters, expected_revenue: float, n_monte_carlo: int
 ) -> float:
     r"""
     Compute $\mu = E[f_B(\text{expected\_revenue})]$.
@@ -332,14 +325,12 @@ def compute_activation_probability(
         expected_revenue,
         supplier_params.choice,
         supplier_params.private_features,
-        n_monte_carlo
+        n_monte_carlo,
     )
 
 
 def compute_activation_sensitivity(
-    supplier_params: SupplierParameters,
-    expected_revenue: float,
-    n_monte_carlo: int
+    supplier_params: SupplierParameters, expected_revenue: float, n_monte_carlo: int
 ) -> float:
     r"""
     Compute $E[f'_B(\text{expected\_revenue})]$.
@@ -364,7 +355,7 @@ def compute_activation_sensitivity(
         expected_revenue,
         supplier_params.choice,
         supplier_params.private_features,
-        n_monte_carlo
+        n_monte_carlo,
     )
 
 
@@ -373,7 +364,7 @@ def sample_supplier_activations(
     payments: np.ndarray,
     expected_allocation: float,
     params: SupplierParameters,
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
 ) -> np.ndarray:
     r"""
     Sample activation decisions for n suppliers.
@@ -406,10 +397,9 @@ def sample_supplier_activations(
     expected_revenues = payments * expected_allocation
 
     # Compute activation probabilities
-    probs = np.array([
-        params.choice(rev, cost)
-        for rev, cost in zip(expected_revenues, costs)
-    ])
+    probs = np.array(
+        [params.choice(rev, cost) for rev, cost in zip(expected_revenues, costs)]
+    )
 
     # Sample activation decisions
     Z = (np.random.random(n) < probs).astype(int)

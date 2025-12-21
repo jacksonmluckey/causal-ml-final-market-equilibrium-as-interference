@@ -55,6 +55,7 @@ class TimePointData:
     Z : Optional[np.ndarray]
         Individual supplier activations (local only, if store_detailed_data=True)
     """
+
     t: int
     p: float
     D: int
@@ -105,6 +106,7 @@ class ExperimentResults:
     convergence_metrics : Optional[dict]
         Convergence analysis results (if computed)
     """
+
     final_payment: float
     weighted_average_payment: Optional[float]
     average_payment: float
@@ -127,6 +129,7 @@ class Experiment:
     results : ExperimentResults
         Experiment outcomes
     """
+
     params: ExperimentParams
     results: ExperimentResults
 
@@ -189,6 +192,7 @@ class Experiment:
 # HELPER FUNCTIONS
 # =============================================================================
 
+
 def experiment_to_dataframe(experiment: Experiment) -> pl.DataFrame:
     r"""
     Convert Experiment to Polars DataFrame.
@@ -208,49 +212,47 @@ def experiment_to_dataframe(experiment: Experiment) -> pl.DataFrame:
 
     # Extract data from timepoints
     data = {
-        't': [tp.t for tp in timepoints],
-        'p': [tp.p for tp in timepoints],
-        'D': [tp.D for tp in timepoints],
-        'T': [tp.T for tp in timepoints],
-        'S': [tp.S for tp in timepoints],
-        'U': [tp.U for tp in timepoints],
+        "t": [tp.t for tp in timepoints],
+        "p": [tp.p for tp in timepoints],
+        "D": [tp.D for tp in timepoints],
+        "T": [tp.T for tp in timepoints],
+        "S": [tp.S for tp in timepoints],
+        "U": [tp.U for tp in timepoints],
     }
 
     # Add scaled versions
-    data['D_bar'] = [tp.D / n for tp in timepoints]
-    data['Z_bar'] = [tp.T / n for tp in timepoints]
+    data["D_bar"] = [tp.D / n for tp in timepoints]
+    data["Z_bar"] = [tp.T / n for tp in timepoints]
 
     # Add local-specific columns if present
     if experiment.params.experiment_type == "local":
-        data['gradient_estimate'] = [tp.gradient_estimate for tp in timepoints]
-        data['delta_hat'] = [tp.delta_hat for tp in timepoints]
-        data['upsilon_hat'] = [tp.upsilon_hat for tp in timepoints]
-        data['zeta'] = [tp.zeta for tp in timepoints]
+        data["gradient_estimate"] = [tp.gradient_estimate for tp in timepoints]
+        data["delta_hat"] = [tp.delta_hat for tp in timepoints]
+        data["upsilon_hat"] = [tp.upsilon_hat for tp in timepoints]
+        data["zeta"] = [tp.zeta for tp in timepoints]
 
     # Add state columns if using DemandParameters
     if experiment.params.demand_params is not None:
-        data['state_d_a'] = [tp.state.d_a if tp.state else None for tp in timepoints]
-        data['state_name'] = [tp.state.name if tp.state else None for tp in timepoints]
+        data["state_d_a"] = [tp.state.d_a if tp.state else None for tp in timepoints]
+        data["state_name"] = [tp.state.name if tp.state else None for tp in timepoints]
 
     # Add experiment metadata as constants
-    data['experiment_type'] = experiment.params.experiment_type
-    data['n'] = n
+    data["experiment_type"] = experiment.params.experiment_type
+    data["n"] = n
 
-    df = pl.DataFrame(data, strict = False)
+    df = pl.DataFrame(data, strict=False)
 
     # Add cumulative regret if computed
     if experiment.results.cumulative_regret is not None:
         df = df.with_columns(
-            pl.Series('cumulative_regret', experiment.results.cumulative_regret)
+            pl.Series("cumulative_regret", experiment.results.cumulative_regret)
         )
 
     return df
 
 
 def compare_experiments(
-    local: Experiment,
-    global_: Experiment,
-    p_optimal: Optional[float] = None
+    local: Experiment, global_: Experiment, p_optimal: Optional[float] = None
 ) -> pl.DataFrame:
     r"""
     Create comparison DataFrame for local vs global experiments.
@@ -277,17 +279,12 @@ def compare_experiments(
 
     # Add regret if optimal payment provided
     if p_optimal is not None:
-        df = df.with_columns(
-            ((pl.col('p') - p_optimal) ** 2).alias('squared_error')
-        )
+        df = df.with_columns(((pl.col("p") - p_optimal) ** 2).alias("squared_error"))
 
     return df
 
 
-def compute_cumulative_regret(
-    experiment: Experiment,
-    p_optimal: float
-) -> List[float]:
+def compute_cumulative_regret(experiment: Experiment, p_optimal: float) -> List[float]:
     r"""
     Compute cumulative regret over time.
 
@@ -312,10 +309,7 @@ def compute_cumulative_regret(
     return cumulative_regret
 
 
-def analyze_convergence(
-    experiment: Experiment,
-    p_optimal: float
-) -> dict:
+def analyze_convergence(experiment: Experiment, p_optimal: float) -> dict:
     r"""
     Analyze convergence properties of the learning algorithm.
 
@@ -343,7 +337,7 @@ def analyze_convergence(
 
     # Compute errors
     errors = payments - p_optimal
-    squared_errors = errors ** 2
+    squared_errors = errors**2
 
     # Weighted metrics (for local experiments using Theorem 7)
     weights = np.arange(1, T + 1)
@@ -351,16 +345,18 @@ def analyze_convergence(
     weighted_regret = np.sum(weights * squared_errors) / weight_sum
 
     metrics = {
-        'final_payment': experiment.results.final_payment,
-        'optimal_payment': p_optimal,
-        'final_error': abs(experiment.results.final_payment - p_optimal),
-        'mean_squared_error': float(np.mean(squared_errors)),
-        'weighted_regret': float(weighted_regret),
+        "final_payment": experiment.results.final_payment,
+        "optimal_payment": p_optimal,
+        "final_error": abs(experiment.results.final_payment - p_optimal),
+        "mean_squared_error": float(np.mean(squared_errors)),
+        "weighted_regret": float(weighted_regret),
     }
 
     # Add weighted average error for local experiments
     if experiment.results.weighted_average_payment is not None:
-        metrics['weighted_average'] = experiment.results.weighted_average_payment
-        metrics['weighted_error'] = abs(experiment.results.weighted_average_payment - p_optimal)
+        metrics["weighted_average"] = experiment.results.weighted_average_payment
+        metrics["weighted_error"] = abs(
+            experiment.results.weighted_average_payment - p_optimal
+        )
 
     return metrics

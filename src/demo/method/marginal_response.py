@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 # SECTION 3.2: THE MARGINAL RESPONSE FUNCTION
 # =============================================================================
 
+
 @dataclass
 class MarginalResponseAnalysis:
     r"""
@@ -55,11 +56,12 @@ class MarginalResponseAnalysis:
     sigma_omega : float
         Scaled matching elasticity $\Sigma^{\Omega}_a(p)$ from Equation 3.21
     """
-    delta: float              # Marginal response Δ_a(p)
-    mu_prime: float          # Actual gradient dμ/dp
+
+    delta: float  # Marginal response Δ_a(p)
+    mu_prime: float  # Actual gradient dμ/dp
     interference_factor: float  # 1 + R_a(p)
-    sigma_delta: float       # Scaled marginal sensitivity
-    sigma_omega: float       # Scaled matching elasticity
+    sigma_delta: float  # Scaled marginal sensitivity
+    sigma_omega: float  # Scaled matching elasticity
 
 
 def compute_marginal_response(
@@ -67,7 +69,7 @@ def compute_marginal_response(
     equilibrium: MeanFieldEquilibrium,
     choice: ChoiceFunction,
     private_features: PrivateFeatureDistribution,
-    n_monte_carlo: int = 10000
+    n_monte_carlo: int = 10000,
 ) -> float:
     r"""
     Compute the marginal response function $\Delta_a(p)$.
@@ -101,10 +103,7 @@ def compute_marginal_response(
 
     # $E[f'_{B_1}(p \cdot q)]$
     expected_choice_deriv = compute_expected_choice_derivative(
-        expected_revenue,
-        choice,
-        private_features,
-        n_monte_carlo
+        expected_revenue, choice, private_features, n_monte_carlo
     )
 
     # $\Delta = q \cdot E[f'_B(p \cdot q)]$
@@ -117,7 +116,7 @@ def compute_supply_gradient(
     p: float,
     equilibrium: MeanFieldEquilibrium,
     delta: float,
-    allocation: AllocationFunction
+    allocation: AllocationFunction,
 ) -> float:
     r"""
     Compute the actual supply gradient $d\mu_a(p)/dp$ using Lemma 4.
@@ -179,7 +178,7 @@ def analyze_marginal_response(
     choice: ChoiceFunction,
     private_features: PrivateFeatureDistribution,
     allocation: AllocationFunction,
-    n_monte_carlo: int = 10000
+    n_monte_carlo: int = 10000,
 ) -> MarginalResponseAnalysis:
     r"""
     Comprehensive analysis of the marginal response function.
@@ -215,11 +214,7 @@ def analyze_marginal_response(
 
     # Marginal response (Definition 9)
     delta = compute_marginal_response(
-        p,
-        equilibrium,
-        choice,
-        private_features,
-        n_monte_carlo
+        p, equilibrium, choice, private_features, n_monte_carlo
     )
 
     # Decomposition of interference factor (Equation 3.21)
@@ -246,7 +241,7 @@ def analyze_marginal_response(
         mu_prime=mu_prime,
         interference_factor=interference_factor,
         sigma_delta=sigma_delta,
-        sigma_omega=sigma_omega
+        sigma_omega=sigma_omega,
     )
 
 

@@ -19,7 +19,7 @@ def fit_utility_spline(
     payments: np.ndarray,
     utilities: np.ndarray,
     p_bounds: Tuple[float, float],
-    smoothing: Optional[float] = None
+    smoothing: Optional[float] = None,
 ) -> Tuple[UnivariateSpline, float]:
     r"""
     Fit a smooth spline to utility observations and find the maximizer.
@@ -69,8 +69,7 @@ def fit_utility_spline(
 
 
 def find_best_payment_from_history(
-    payment_history: List[float],
-    utility_history: List[float]
+    payment_history: List[float], utility_history: List[float]
 ) -> float:
     """
     Find the payment with highest observed utility.
@@ -99,7 +98,7 @@ def sample_exploration_payment(
     p_bounds: Tuple[float, float],
     strategy: str,
     step_size_pct: float,
-    rng: np.random.Generator
+    rng: np.random.Generator,
 ) -> float:
     """
     Sample a new payment for exploration.
@@ -152,7 +151,7 @@ def compute_epsilon(
     epsilon_decay: Optional[str],
     decay_rate: Optional[float],
     t: int,
-    T: int
+    T: int,
 ) -> float:
     """
     Compute epsilon at timestep t based on decay schedule.

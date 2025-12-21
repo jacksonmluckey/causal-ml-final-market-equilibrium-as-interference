@@ -90,7 +90,7 @@ class TestExtractDemandFromParams:
             demand=0.5,  # Float
             eta=1.0,
             experiment_type="local",
-            zeta=0.1
+            zeta=0.1,
         )
 
         config = extract_demand_from_params(params)
@@ -109,7 +109,7 @@ class TestExtractDemandFromParams:
         demand_params = DemandParameters(
             states={
                 "Low": GlobalState(name="Low", d_a=0.3, probability=0.5),
-                "High": GlobalState(name="High", d_a=0.7, probability=0.5)
+                "High": GlobalState(name="High", d_a=0.7, probability=0.5),
             }
         )
 
@@ -124,7 +124,7 @@ class TestExtractDemandFromParams:
             demand=demand_params,  # DemandParameters
             eta=1.0,
             experiment_type="local",
-            zeta=0.1
+            zeta=0.1,
         )
 
         config = extract_demand_from_params(params)
@@ -151,7 +151,7 @@ class TestSampleCurrentState:
         demand_params = DemandParameters(
             states={
                 "Low": GlobalState(name="Low", d_a=0.3, probability=0.3),
-                "High": GlobalState(name="High", d_a=0.7, probability=0.7)
+                "High": GlobalState(name="High", d_a=0.7, probability=0.7),
             }
         )
         rng = np.random.default_rng(42)
@@ -173,7 +173,9 @@ class TestSampleCurrentState:
         """Test that either demand_params or d_a must be provided."""
         rng = np.random.default_rng(42)
 
-        with pytest.raises(ValueError, match="Must provide either demand_params or d_a"):
+        with pytest.raises(
+            ValueError, match="Must provide either demand_params or d_a"
+        ):
             sample_current_state(None, None, rng)
 
 
@@ -213,7 +215,7 @@ class TestComputeWeightedAveragePayment:
 
         # Manual calculation: (2/(3*4)) * (1*10 + 2*20 + 3*30)
         # = (2/12) * (10 + 40 + 90) = (1/6) * 140 = 23.333...
-        expected = (2.0 / (3 * 4)) * (1*10 + 2*20 + 3*30)
+        expected = (2.0 / (3 * 4)) * (1 * 10 + 2 * 20 + 3 * 30)
         assert abs(weighted_avg - expected) < 1e-10
 
     def test_compute_weighted_average_payment_empty(self):
@@ -234,9 +236,7 @@ class TestBuildExperimentResults:
         ]
 
         results = build_experiment_results(
-            timepoints=timepoints,
-            final_payment=30.0,
-            weighted_average_payment=25.0
+            timepoints=timepoints, final_payment=30.0, weighted_average_payment=25.0
         )
 
         assert results.final_payment == 30.0
@@ -253,9 +253,7 @@ class TestBuildExperimentResults:
         ]
 
         results = build_experiment_results(
-            timepoints=timepoints,
-            final_payment=10.0,
-            weighted_average_payment=None
+            timepoints=timepoints, final_payment=10.0, weighted_average_payment=None
         )
 
         assert results.weighted_average_payment is None

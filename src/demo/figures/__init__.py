@@ -1,2 +1,1 @@
-r"""Figure generation code
-"""
+r"""Figure generation code"""

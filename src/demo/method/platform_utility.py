@@ -19,7 +19,7 @@ def compute_platform_utility(
     allocation: AllocationFunction,
     d_a: float,
     mu: float,
-    p: float
+    p: float,
 ) -> float:
     r"""
     Compute mean-field utility given activation rate $\mu$.
@@ -55,7 +55,7 @@ def compute_platform_utility_derivative(
     d_a: float,
     mu: float,
     mu_prime: float,
-    p: float
+    p: float,
 ) -> float:
     r"""
     Compute derivative of utility with respect to payment p.
@@ -84,8 +84,7 @@ def compute_platform_utility_derivative(
     omega_deriv = allocation.derivative(x)
 
     # Term from change in μ
-    bracket_term = (r_val - p * omega_val -
-                   (r_deriv - p * omega_deriv) * x)
+    bracket_term = r_val - p * omega_val - (r_deriv - p * omega_deriv) * x
     mu_contribution = mu_prime * bracket_term
 
     # Direct term from change in p
@@ -100,7 +99,7 @@ def compute_realized_utility(
     p: float,
     revenue_fn: RevenueFunction,
     allocation: AllocationFunction,
-    n: int
+    n: int,
 ) -> float:
     r"""
     Compute realized utility from experimental observations.
@@ -132,11 +131,7 @@ def compute_realized_utility(
 
     # Compute normalized utility
     normalized_utility = compute_platform_utility(
-        revenue_fn=revenue_fn,
-        allocation=allocation,
-        d_a=d_a,
-        mu=mu,
-        p=p
+        revenue_fn=revenue_fn, allocation=allocation, d_a=d_a, mu=mu, p=p
     )
 
     # Scale to total utility

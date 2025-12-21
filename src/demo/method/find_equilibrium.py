@@ -19,17 +19,11 @@ from scipy.optimize import brentq
 from .supplier import (
     ChoiceFunction,
     PrivateFeatureDistribution,
-    compute_expected_choice_probability
+    compute_expected_choice_probability,
 )
-from .allocation import (
-    AllocationFunction
-)
-from .revenue import (
-    RevenueFunction
-)
-from .platform_utility import (
-    compute_platform_utility
-)
+from .allocation import AllocationFunction
+from .revenue import RevenueFunction
+from .platform_utility import compute_platform_utility
 
 
 @dataclass
@@ -53,11 +47,12 @@ class MeanFieldEquilibrium:
     demand_supply_ratio : float
         The ratio $x = d_a / \mu$ used in the allocation function
     """
+
     p: float
     d_a: float
-    mu: float                   # Equilibrium supply fraction
-    q: float                    # Allocation per active supplier
-    u: float                    # Platform utility
+    mu: float  # Equilibrium supply fraction
+    q: float  # Allocation per active supplier
+    u: float  # Platform utility
     demand_supply_ratio: float  # x = d_a / μ
 
 
@@ -69,7 +64,7 @@ def find_equilibrium_supply_mu(
     allocation: AllocationFunction,
     mu_bounds: Tuple[float, float] = (1e-6, 1.0 - 1e-6),
     tol: float = 1e-8,
-    n_samples: int = 10000
+    n_samples: int = 10000,
 ) -> float:
     r"""
     Solve for equilibrium supply fraction $\mu_a(p)$.
@@ -108,16 +103,14 @@ def find_equilibrium_supply_mu(
     - This makes joining less attractive, reducing $E[f(...)]$
     - The negative feedback ensures a unique fixed point
     """
+
     def fixed_point_residual(mu: float) -> float:
         r"""$g(\mu) = \mu - E[f_{B_1}(p \cdot \omega(d_a/\mu))]$"""
         x = d_a / mu  # demand-to-supply ratio
         q = allocation(x)  # allocation per supplier
         expected_revenue = p * q
         expected_choice = compute_expected_choice_probability(
-            expected_revenue,
-            choice,
-            private_features,
-            n_samples
+            expected_revenue, choice, private_features, n_samples
         )
         return mu - expected_choice
 
@@ -146,7 +139,7 @@ def compute_mean_field_equilibrium(
     revenue_fn: RevenueFunction,
     choice: ChoiceFunction,
     private_features: PrivateFeatureDistribution,
-    allocation: AllocationFunction
+    allocation: AllocationFunction,
 ) -> MeanFieldEquilibrium:
     r"""
     Compute the mean-field equilibrium for payment p.
@@ -181,13 +174,7 @@ def compute_mean_field_equilibrium(
         The equilibrium quantities
     """
     # Step 1: Solve for equilibrium supply (Equation 3.13)
-    mu = find_equilibrium_supply_mu(
-        p,
-        d_a,
-        choice,
-        private_features,
-        allocation
-    )
+    mu = find_equilibrium_supply_mu(p, d_a, choice, private_features, allocation)
 
     # Step 2: Compute allocation (Equation 3.14)
     x = d_a / mu  # demand-to-supply ratio
@@ -195,18 +182,7 @@ def compute_mean_field_equilibrium(
 
     # Step 3: Compute utility (Equation 3.15)
     u = compute_platform_utility(
-        revenue_fn=revenue_fn,
-        allocation=allocation,
-        d_a=d_a,
-        mu=mu,
-        p=p
+        revenue_fn=revenue_fn, allocation=allocation, d_a=d_a, mu=mu, p=p
     )
 
-    return MeanFieldEquilibrium(
-        p=p,
-        d_a=d_a,
-        mu=mu,
-        q=q,
-        u=u,
-        demand_supply_ratio=x
-    )
+    return MeanFieldEquilibrium(p=p, d_a=d_a, mu=mu, q=q, u=u, demand_supply_ratio=x)

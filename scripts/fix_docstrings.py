@@ -22,7 +22,7 @@ def fix_docstrings(file_path: Path) -> None:
     # Now add 'r' only to opening docstrings
     # Strategy: track whether we're inside a docstring or not
 
-    lines = content.split('\n')
+    lines = content.split("\n")
     result_lines = []
     in_docstring = False
 
@@ -54,7 +54,7 @@ def fix_docstrings(file_path: Path) -> None:
             # More than 2 triple quotes on one line - unusual, just add as-is
             result_lines.append(line)
 
-    result_content = '\n'.join(result_lines)
+    result_content = "\n".join(result_lines)
     file_path.write_text(result_content)
     print(f"Fixed {file_path.name}")
 

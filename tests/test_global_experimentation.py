@@ -27,13 +27,10 @@ def test_fit_utility_spline():
     # Create synthetic data with known maximum at p=5
     p_values = np.linspace(0, 10, 20)
     # Quadratic with maximum at p=5
-    u_values = 100 - (p_values - 5)**2 + np.random.normal(0, 1, 20)
+    u_values = 100 - (p_values - 5) ** 2 + np.random.normal(0, 1, 20)
 
     spline, p_optimal = fit_utility_spline(
-        payments=p_values,
-        utilities=u_values,
-        p_bounds=(0.0, 10.0),
-        smoothing=1.0
+        payments=p_values, utilities=u_values, p_bounds=(0.0, 10.0), smoothing=1.0
     )
 
     # Should find optimal around p=5
@@ -54,10 +51,7 @@ def test_baseline_strategy_runs():
     # Create supplier parameters
     choice = create_logistic_choice(alpha=1.0)
     costs = create_lognormal_costs()
-    supplier_params = SupplierParameters(
-        choice=choice,
-        private_features=costs
-    )
+    supplier_params = SupplierParameters(choice=choice, private_features=costs)
 
     # Run baseline with small parameters
     T = 30
@@ -75,7 +69,7 @@ def test_baseline_strategy_runs():
         d_a=0.5,
         p_bounds=(0.5, 5.0),
         rng=rng,
-        verbose=False
+        verbose=False,
     )
 
     # Check that we got results
@@ -87,14 +81,18 @@ def test_baseline_strategy_runs():
     # First T_explore should have random payments
     exploration_payments = [tp.p for tp in result.results.timepoints[:T_explore]]
     # They should be diverse (not all the same)
-    assert len(set(np.round(exploration_payments, 2))) > 5, "Exploration should sample diverse payments"
+    assert len(set(np.round(exploration_payments, 2))) > 5, (
+        "Exploration should sample diverse payments"
+    )
 
     # Last phase should all use the learned payment
     exploitation_payments = [tp.p for tp in result.results.timepoints[T_explore:]]
     if len(exploitation_payments) > 0:
         # All should be the same (the learned optimal)
-        assert all(np.isclose(p, result.results.final_payment, atol=1e-6)
-                   for p in exploitation_payments), "Exploitation should use learned payment"
+        assert all(
+            np.isclose(p, result.results.final_payment, atol=1e-6)
+            for p in exploitation_payments
+        ), "Exploitation should use learned payment"
 
 
 def test_baseline_backwards_compatibility():
@@ -118,7 +116,7 @@ def test_baseline_backwards_compatibility():
         d_a=0.5,
         p_bounds=(0.5, 5.0),
         rng=rng,
-        verbose=False
+        verbose=False,
     )
 
     # Should work just like the new wrapper
@@ -143,7 +141,7 @@ def test_baseline_requires_T_explore():
             revenue_fn=revenue_fn,
             allocation=allocation,
             supplier_params=supplier_params,
-            d_a=0.5
+            d_a=0.5,
         )
 
 
@@ -164,7 +162,7 @@ def test_baseline_T_explore_validation():
             revenue_fn=revenue_fn,
             allocation=allocation,
             supplier_params=supplier_params,
-            d_a=0.5
+            d_a=0.5,
         )
 
 
@@ -193,7 +191,7 @@ def test_epsilon_greedy_strategy_runs():
         d_a=0.5,
         p_bounds=(0.5, 5.0),
         rng=rng,
-        verbose=False
+        verbose=False,
     )
 
     # Check that we got results
@@ -219,7 +217,7 @@ def test_epsilon_greedy_requires_p_init():
             revenue_fn=revenue_fn,
             allocation=allocation,
             supplier_params=supplier_params,
-            d_a=0.5
+            d_a=0.5,
         )
 
 
@@ -246,7 +244,7 @@ def test_epsilon_greedy_with_linear_decay():
         d_a=0.5,
         p_bounds=(0.5, 5.0),
         rng=rng,
-        verbose=False
+        verbose=False,
     )
 
     assert result.results is not None
@@ -277,7 +275,7 @@ def test_epsilon_greedy_exploration_strategies():
         supplier_params=supplier_params,
         d_a=0.5,
         p_bounds=(0.5, 5.0),
-        rng=rng
+        rng=rng,
     )
     assert result1.results is not None
 
@@ -294,7 +292,7 @@ def test_epsilon_greedy_exploration_strategies():
         supplier_params=supplier_params,
         d_a=0.5,
         p_bounds=(0.5, 5.0),
-        rng=rng
+        rng=rng,
     )
     assert result2.results is not None
 
@@ -315,5 +313,5 @@ def test_invalid_strategy_raises_error():
             revenue_fn=revenue_fn,
             allocation=allocation,
             supplier_params=supplier_params,
-            d_a=0.5
+            d_a=0.5,
         )
