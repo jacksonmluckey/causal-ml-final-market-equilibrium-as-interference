@@ -7,7 +7,6 @@ from demo.method import (
     create_linear_revenue,
     run_learning_algorithm,
     run_global_experimentation,
-    compute_cumulative_regret,
     DemandParameters,
     GlobalState,
 )

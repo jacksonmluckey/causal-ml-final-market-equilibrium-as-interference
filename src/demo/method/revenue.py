@@ -9,7 +9,6 @@ Key equations:
 where $r(x)$ is revenue per active supplier when demand ratio is $x = d/t$.
 """
 
-import numpy as np
 from typing import Callable, Optional
 from dataclasses import dataclass
 

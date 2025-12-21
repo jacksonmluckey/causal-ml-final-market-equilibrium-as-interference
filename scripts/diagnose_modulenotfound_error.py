@@ -7,7 +7,6 @@ pyproject.toml triggers a reinstall that fixes the import.
 """
 
 import subprocess
-import sys
 from pathlib import Path
 
 

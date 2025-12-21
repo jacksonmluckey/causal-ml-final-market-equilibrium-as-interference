@@ -6,7 +6,6 @@ the same behavior as the original class-based implementation.
 """
 
 import pytest
-import numpy as np
 from demo.method import (
     # Allocation
     AllocationFunction,

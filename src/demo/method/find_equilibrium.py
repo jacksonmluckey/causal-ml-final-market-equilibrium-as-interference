@@ -13,7 +13,6 @@ models, including:
 
 from dataclasses import dataclass
 from typing import Tuple
-import numpy as np
 from scipy.optimize import brentq
 
 from .supplier import (

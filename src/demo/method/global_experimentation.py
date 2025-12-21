@@ -25,8 +25,8 @@ from typing import Optional, List, Tuple, overload
 from .allocation import AllocationFunction
 from .revenue import RevenueFunction
 from .supplier import SupplierParameters
-from .demand import DemandParameters, GlobalState
-from .experiment_results import TimePointData, ExperimentResults, Experiment
+from .demand import DemandParameters
+from .experiment_results import TimePointData, Experiment
 from .experiment import (
     ExperimentParams,
     setup_rng,

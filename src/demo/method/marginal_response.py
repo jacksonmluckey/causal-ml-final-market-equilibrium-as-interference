@@ -15,12 +15,10 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING
-import numpy as np
+from typing import TYPE_CHECKING
 
 from .allocation import AllocationFunction
 from .supplier import ChoiceFunction, PrivateFeatureDistribution
-from .find_equilibrium import compute_mean_field_equilibrium
 from .supplier import compute_expected_choice_derivative
 
 if TYPE_CHECKING:

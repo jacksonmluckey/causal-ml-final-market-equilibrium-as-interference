@@ -21,20 +21,17 @@ References:
 
 import numpy as np
 from dataclasses import dataclass
-from typing import Optional, Tuple, List, Callable, Union, overload
+from typing import Optional, Tuple, List, Callable, overload
 
 from .allocation import AllocationFunction
 from .revenue import RevenueFunction
 from .platform_utility import compute_realized_utility
 from .supplier import (
-    ChoiceFunction,
-    PrivateFeatureDistribution,
     SupplierParameters,
     sample_supplier_activations,
-    compute_expected_choice_probability,
 )
-from .demand import DemandParameters, GlobalState, sample_state, sample_demand
-from .experiment_results import TimePointData, ExperimentResults, Experiment
+from .demand import DemandParameters, GlobalState, sample_demand
+from .experiment_results import TimePointData, Experiment
 from .experiment import (
     ExperimentParams,
     setup_rng,
@@ -753,7 +750,6 @@ def run_learning_algorithm(
     timepoints: List[TimePointData] = []
 
     # Import here to avoid circular imports
-    from .find_equilibrium import find_equilibrium_supply_mu
 
     for t in range(1, T + 1):
         if verbose and t % 20 == 0:
