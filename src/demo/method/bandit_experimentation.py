@@ -128,7 +128,7 @@ def sample_exploration_payment(
         return rng.uniform(p_min, p_max)
 
     elif strategy == "adaptive_step":
-        # Step ±(step_size_pct * p_best) from current best
+        # Step plus or minus (step_size_pct * p_best) from current best
         step_size = step_size_pct * p_best
 
         # Randomly choose direction: +1 (larger) or -1 (smaller)
@@ -177,11 +177,11 @@ def compute_epsilon(
     if epsilon_decay is None:
         return epsilon
     elif epsilon_decay == "linear":
-        # Linear decay: ε_t = ε * (1 - t/T)
-        # Ensures ε_T = 0
+        # Linear decay: $\epsilon_t = \epsilon \cdot (1 - t/T)$
+        # Ensures $\epsilon_{T} = 0$
         return epsilon * (1.0 - t / T)
     elif epsilon_decay == "exponential":
-        # Exponential decay: ε_t = ε * exp(-decay_rate * t)
+        # Exponential decay: $\epsilon_t = \epsilon \cdot \exp(-\text{decay\_rate} \cdot t)$
         if decay_rate is None:
             raise ValueError("decay_rate required for exponential decay")
         return epsilon * np.exp(-decay_rate * t)

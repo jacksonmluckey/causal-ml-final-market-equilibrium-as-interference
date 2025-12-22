@@ -11,9 +11,9 @@ Section 4 covers:
 - 4.4: Comparison with Global Experimentation
 
 The key insight is that local experimentation with symmetric payment
-perturbations P_i = p + ζε_i allows us to estimate utility gradients
+perturbations $P_i = p + \zeta \varepsilon_i$ allows us to estimate utility gradients
 without disturbing the market equilibrium, enabling gradient-based
-optimization with vanishingly small perturbations as n → ∞.
+optimization with vanishingly small perturbations as $n \to \infty$.
 
 References:
     Wager, S. & Xu, K. (2021). "Experimenting in Equilibrium"
@@ -56,7 +56,7 @@ def generate_payment_perturbations(
     Generate symmetric payment perturbations $\varepsilon_i \in \{-1, +1\}$.
 
     From equation (2.1)/(3.11):
-        $P_i = p + \zeta \varepsilon_i$, where $\varepsilon_i \sim \{±1\}$ uniformly
+        $P_i = p + \zeta \varepsilon_i$, where $\varepsilon_i \sim \{\pm 1\}$ uniformly
 
     Parameters
     ----------
@@ -95,7 +95,7 @@ def run_local_experiment(
     Run one period of local experimentation.
 
     This implements the data collection step of Section 4.1:
-    1. Generate $\varepsilon_i \sim \{±1\}$ uniformly for each supplier
+    1. Generate $\varepsilon_i \sim \{\pm 1\}$ uniformly for each supplier
     2. Set payments $P_i = p + \zeta \varepsilon_i$
     3. Suppliers decide to become active based on expected revenue
     4. Observe $Z_i$, D, T
@@ -116,7 +116,7 @@ def run_local_experiment(
     revenue_fn : RevenueFunction
         Platform revenue function
     allocation : AllocationFunction
-        The allocation function ω
+        The allocation function $\omega$
     t : int
         Time period (1-indexed)
     D : Optional[int]
@@ -216,7 +216,7 @@ def estimate_delta_hat(data: TimePointData, n: int) -> float:
 
     This is the scaled regression coefficient of $Z_i$ on $\varepsilon_i$.
 
-    Since $\text{Var}(\varepsilon_i) = 1$ ($\varepsilon_i \in \{±1\}$ uniformly), this simplifies to:
+    Since $\text{Var}(\varepsilon_i) = 1$ ($\varepsilon_i \in \{\pm 1\}$ uniformly), this simplifies to:
         $\hat{\Delta} = \zeta^{-1} \cdot \text{Cov}(Z_i, \varepsilon_i)$
 
     Parameters
@@ -405,7 +405,7 @@ def estimate_utility_gradient(
     n : int
         Number of suppliers
     allocation : AllocationFunction
-        The allocation function ω
+        The allocation function $\omega$
     revenue_fn : RevenueFunction
         Platform revenue function
 
@@ -652,7 +652,7 @@ def run_learning_algorithm(
     revenue_fn : RevenueFunction
         Platform revenue function
     allocation : AllocationFunction
-        The allocation function ω
+        The allocation function $\omega$
     supplier_params : SupplierParameters
         Supplier behavior parameters
     d_a : Optional[float]
@@ -665,7 +665,7 @@ def run_learning_algorithm(
     alpha : float
         Zeta decay exponent (stored in params, not actively used here)
     store_detailed_data : bool
-        Whether to store individual-level data (Z_i, ε_i arrays)
+        Whether to store individual-level data ($Z_i$, $\varepsilon_i$ arrays)
     rng : Optional[np.random.Generator]
         Random number generator for reproducibility
     rng_seed : Optional[int]

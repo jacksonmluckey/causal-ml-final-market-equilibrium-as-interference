@@ -4,7 +4,7 @@ Demand Model for Stochastic Market
 The demand D is drawn conditionally on a global state A.
 Key properties (equations 3.1 and 3.2):
 - $E[D/n | A=a] = d_a$ (expected demand per supplier)
-- Var(D/n | A=a) → 0 as n → ∞ (concentration)
+- $Var(D/n | A=a) \rightarrow 0$ as $n \rightarrow \infty$ (concentration)
 - Extreme deviations are exponentially unlikely (tail property)
 """
 
@@ -84,7 +84,7 @@ def sample_demand(
 
     The demand satisfies:
     - $E[D/n | A=a] = d_a$
-    - $D/n$ concentrates on d_a as $n \rightarrow \infty`
+    - $D/n$ concentrates on d_a as $n \to \infty$
 
     Uses a Beta distribution scaled to have mean n * d_a and
     variance that decreases with n (satisfying concentration property 3.1).

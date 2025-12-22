@@ -83,7 +83,7 @@ def compute_platform_utility_derivative(
     omega_val = allocation(x)
     omega_deriv = allocation.derivative(x)
 
-    # Term from change in μ
+    # Term from change in $\mu$
     bracket_term = r_val - p * omega_val - (r_deriv - p * omega_deriv) * x
     mu_contribution = mu_prime * bracket_term
 

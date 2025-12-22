@@ -31,7 +31,7 @@ class MeanFieldEquilibrium:
     Mean-field equilibrium of the marketplace.
 
     This implements the limiting equilibrium from Lemma 2, where
-    the number of suppliers approaches mean-field ($\lim{n \rightarrow \infty}$)
+    the number of suppliers approaches mean-field ($\lim_{n \to \infty}$)
 
     Attributes
     ----------
@@ -52,7 +52,7 @@ class MeanFieldEquilibrium:
     mu: float  # Equilibrium supply fraction
     q: float  # Allocation per active supplier
     u: float  # Platform utility
-    demand_supply_ratio: float  # x = d_a / μ
+    demand_supply_ratio: float  # $x = d_a / \mu$
 
 
 def find_equilibrium_supply_mu(

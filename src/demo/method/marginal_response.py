@@ -6,7 +6,7 @@ This module implements Section 3.2 of Wager & Xu (2021)
 
 Section 3.2: The Marginal Response Function
     - Marginal response function (Definition 9)
-    - Relationship between Δ and μ' (Lemma 4)
+    - Relationship between $\Delta$ and $\mu'$ (Lemma 4)
     - Interference factor decomposition (Equation 3.21)
     - Utility gradient computation (Proposition 12)
 
@@ -36,8 +36,8 @@ class MarginalResponseAnalysis:
     Analysis of the marginal response function and interference effects.
 
     From Section 3.2, this captures:
-    - The marginal response Δ_a(p) (Definition 9)
-    - The actual supply gradient μ'_a(p) (Lemma 4)
+    - The marginal response $\Delta_a(p)$ (Definition 9)
+    - The actual supply gradient $\mu'_a(p)$ (Lemma 4)
     - The interference factor decomposition (Equation 3.21)
 
     Attributes
@@ -55,8 +55,8 @@ class MarginalResponseAnalysis:
         Scaled matching elasticity $\Sigma^{\Omega}_a(p)$ from Equation 3.21
     """
 
-    delta: float  # Marginal response Δ_a(p)
-    mu_prime: float  # Actual gradient dμ/dp
+    delta: float  # Marginal response $\Delta_a(p)$
+    mu_prime: float  # Actual gradient $d\mu/dp$
     interference_factor: float  # 1 + R_a(p)
     sigma_delta: float  # Scaled marginal sensitivity
     sigma_omega: float  # Scaled matching elasticity
@@ -252,14 +252,14 @@ def analyze_marginal_response(
 #     """
 #     Compute the utility gradient du_a(p)/dp.
 
-#     From Proposition 12 in the appendix, for linear revenue r(x) = γ·ω(x):
-#         u'_a(p) = μ'_a(p) · [r(x) - p·ω(x) - (r'(x) - p·ω'(x))·x] - ω(x)·μ_a(p)
+#     From Proposition 12 in the appendix, for linear revenue $r(x) = \gamma \cdot \omega(x)$:
+#         $u'_a(p) = \mu'_a(p) \cdot [r(x) - p \cdot \omega(x) - (r'(x) - p \cdot \omega'(x)) \cdot x] - \omega(x) \cdot \mu_a(p)$
 
-#     where x = d_a/μ_a(p).
+#     where $x = d_a/\mu_a(p)$.
 
-#     For r(x) = γ·ω(x), this simplifies to:
-#         u'_a(p) = μ'_a(p) · [(γ-p)·ω(x) - (γ-p)·ω'(x)·x] - ω(x)·μ_a(p)
-#                 = μ'_a(p) · (γ-p) · [ω(x) - ω'(x)·x] - ω(x)·μ_a(p)
+#     For $r(x) = \gamma \cdot \omega(x)$, this simplifies to:
+#         $u'_a(p) = \mu'_a(p) \cdot [(\gamma-p) \cdot \omega(x) - (\gamma-p) \cdot \omega'(x) \cdot x] - \omega(x) \cdot \mu_a(p)$
+#                 $= \mu'_a(p) \cdot (\gamma-p) \cdot [\omega(x) - \omega'(x) \cdot x] - \omega(x) \cdot \mu_a(p)$
 
 #     Parameters
 #     ----------
@@ -286,16 +286,16 @@ def analyze_marginal_response(
 #         marginal_analysis = analyze_marginal_response(p, params, equilibrium)
 
 #     mu = equilibrium.mu
-#     q = equilibrium.q  # ω(x)
+#     q = equilibrium.q  # $\omega(x)$
 #     x = equilibrium.demand_supply_ratio
 #     omega_prime = params.allocation.derivative(x)
 #     mu_prime = marginal_analysis.mu_prime
 
-#     # From Proposition 12 with r(x) = γ·ω(x):
-#     # Term 1: μ' · (γ-p) · [ω(x) - ω'(x)·x]
-#     # Term 2: -ω(x) · μ
+#     # From Proposition 12 with $r(x) = \gamma \cdot \omega(x)$:
+#     # Term 1: $\mu' \cdot (\gamma-p) \cdot [\omega(x) - \omega'(x) \cdot x]$
+#     # Term 2: $-\omega(x) \cdot \mu$
 
-#     bracket_term = q - omega_prime * x  # ω(x) - ω'(x)·x
+#     bracket_term = q - omega_prime * x  # $\omega(x) - \omega'(x) \cdot x$
 
 #     u_prime = mu_prime * (params.gamma - p) * bracket_term - q * mu
 

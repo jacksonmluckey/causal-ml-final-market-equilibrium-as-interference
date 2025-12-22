@@ -12,7 +12,7 @@ This package implements a centralized marketplace model where:
 
 Main components:
 - demand: Demand generation given global state
-- allocation: Regular allocation functions ω(x)
+- allocation: Regular allocation functions $\omega(x)$
 - supplier: Supplier choice behavior
 - platform: Platform utility and market simulation
 """

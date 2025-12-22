@@ -203,7 +203,7 @@ class TestComputeWeightedAveragePayment:
     """Test weighted average payment computation."""
 
     def test_compute_weighted_average_payment(self):
-        """Test weighted average formula: (2/T(T+1)) Σ t·p_t."""
+        r"""Test weighted average formula: $(2/T(T+1)) \sum_{t}^{T} t p_t$"""
         # Create simple timepoints with known payments
         timepoints = [
             TimePointData(t=1, p=10.0, D=100, T=50, S=40.0, U=100.0),

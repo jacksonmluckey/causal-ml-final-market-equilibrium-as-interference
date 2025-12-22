@@ -11,7 +11,7 @@ for global experimentation:
    Phase 2: Deploy learned optimal payment
 
 2. Epsilon-Greedy (strategy="epsilon_greedy"):
-   At each timestep, explore with probability ε, exploit with 1-ε.
+   At each timestep, explore with probability $\epsilon$, exploit with $1-\epsilon$.
    Continuously updates best payment as better ones are found.
 
 Future possible strategies:
@@ -201,12 +201,11 @@ def run_global_experimentation(
             verbose=verbose,
             params=params,
         )
+    # TODO other 2 strategies I was interested in trying
     # elif strategy == "ucb":
     #     # TODO: Implement UCB strategy
-    #     raise NotImplementedError("UCB strategy not yet implemented")
     # elif strategy == "thompson":
     #     # TODO: Implement Thompson Sampling strategy
-    #     raise NotImplementedError("Thompson Sampling strategy not yet implemented")
     else:
         raise ValueError(
             f"Unknown strategy: {strategy}. Choose from: 'baseline', 'epsilon_greedy'"
@@ -238,11 +237,11 @@ def _run_baseline_strategy(
         - Store (p_t, U_t)
 
     Learning Step:
-        - Fit spline: Û(p) = spline({p_t}, {U_t})
-        - Find maximizer: p̂ = argmax Û(p)
+        - Fit spline: $\hat{U}(p) = \text{spline}(\{p_t\}, \{U_t\})$
+        - Find maximizer: $\hat{p} = \arg\max \hat{U}(p)$
 
     Phase 2 (Exploitation, t=T_explore+1 to T):
-        - Deploy learned payment: p_t = p̂
+        - Deploy learned payment: $p_t = \hat{p}$
         - Observe utility U_t
     """
     # Extract parameters from ExperimentParams if provided
@@ -360,7 +359,7 @@ def _run_baseline_strategy(
     )
 
     if verbose:
-        print(f"  Learned optimal payment: p̂ = {p_hat:.4f}")
+        print(f"  Learned optimal payment: $\\hat{{p}}$ = {p_hat:.4f}")
 
     # =========================================================================
     # PHASE 2: EXPLOITATION
@@ -377,7 +376,7 @@ def _run_baseline_strategy(
         state = current.state
         current_d_a = current.d_a
 
-        # Step 2: Deploy learned payment p̂
+        # Step 2: Deploy learned payment $\hat{p}$
         timepoint = run_global_one_timepoint(
             n=n,
             p=p_hat,
@@ -513,7 +512,7 @@ def _run_epsilon_greedy_strategy(
     if verbose:
         decay_str = f" with {epsilon_decay} decay" if epsilon_decay else ""
         print(
-            f"Epsilon-Greedy Strategy (ε={epsilon}{decay_str}, strategy={exploration_strategy})"
+            f"Epsilon-Greedy Strategy (epsilon={epsilon}{decay_str}, strategy={exploration_strategy})"
         )
 
     # =========================================================================
@@ -577,7 +576,7 @@ def _run_epsilon_greedy_strategy(
     final_payment = p_best
 
     if verbose:
-        print(f"\nFinal learned payment: p̂ = {final_payment:.4f}")
+        print(f"\nFinal learned payment: $\\hat{{p}}$ = {final_payment:.4f}")
 
     results = build_experiment_results(
         timepoints=timepoints,

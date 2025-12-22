@@ -74,7 +74,7 @@ class TestAllocationFunctions:
         assert allocation.derivative(0.5) > 0
         assert allocation.derivative(1.0) > 0
 
-        # Derivative should approach 1 as x → 0
+        # Derivative should approach 1 as $x \rightarrow \infty$
         assert allocation.derivative(0.001) == pytest.approx(1.0, abs=0.01)
 
     def test_expected_allocation(self):
@@ -86,7 +86,7 @@ class TestAllocationFunctions:
 
         q = compute_expected_allocation(allocation, mu, d_a)
 
-        # q should equal ω(d_a/μ)
+        # $q = \omega(d_a / \mu)$
         x = d_a / mu
         expected = allocation(x)
         assert q == pytest.approx(expected)
@@ -116,7 +116,7 @@ class TestSupplierParameters:
                 prob = choice(x, b)
                 assert 0 <= prob <= 1
 
-        # Test monotonicity: higher revenue → higher probability
+        # Test monotonicity: higher revenue => higher probability
         b = 20
         prob_low = choice(10, b)
         prob_high = choice(30, b)

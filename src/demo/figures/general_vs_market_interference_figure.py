@@ -20,21 +20,21 @@ if __name__ == "__main__":
     # Gap
     # Group 2: nodes n-2, n-1, n (bottom)
     w_positions = [
-        (0, 4.0),  # W₁
-        (0, 3.2),  # W₂
-        (0, 2.4),  # W₃
-        (0, 1.0),  # Wₙ₋₂
-        (0, 0.2),  # Wₙ₋₁
-        (0, -0.6),  # Wₙ
+        (0, 4.0),  # W_1
+        (0, 3.2),  # W_2
+        (0, 2.4),  # W_3
+        (0, 1.0),  # W_{n-2}
+        (0, 0.2),  # W_{n-1}
+        (0, -0.6),  # W_{n}
     ]
 
     y_positions = [
-        (3, 4.0),  # Y₁
-        (3, 3.2),  # Y₂
-        (3, 2.4),  # Y₃
-        (3, 1.0),  # Yₙ₋₂
-        (3, 0.2),  # Yₙ₋₁
-        (3, -0.6),  # Yₙ
+        (3, 4.0),  # Y_1
+        (3, 3.2),  # Y_2
+        (3, 2.4),  # Y_3
+        (3, 1.0),  # Y_{n-2}
+        (3, 0.2),  # Y_{n-1}
+        (3, -0.6),  # Y_{n}
     ]
 
     p_position = (1.5, 1.7)  # P node position for marketplace (centered)
@@ -166,10 +166,7 @@ if __name__ == "__main__":
     for i in range(6):
         draw_arrow(ax1, w_positions[i], y_positions[i], DIRECT_COLOR)
 
-    # Draw dotted lines to indicate continuation
-    # (Removed lines between W₂-W₃ and Y₂-Y₃ as requested)
-
-    # Draw dotted lines in the gap between groups
+    # Draw dotted lines in the gap between groups to indicate continuation
     draw_dotted_line(
         ax1,
         (w_positions[2][0], w_positions[2][1] - 0.35),
@@ -181,23 +178,21 @@ if __name__ == "__main__":
         (y_positions[3][0], y_positions[3][1] + 0.35),
     )
 
-    # (Removed lines between Wₙ₋₂-Wₙ₋₁ and Yₙ₋₂-Yₙ₋₁ as requested)
-
     # Draw orange interference arrows ONLY WITHIN GROUPS
-    # Group 1: indices 0, 1, 2 (W₁, W₂, W₃ to Y₁, Y₂, Y₃)
+    # Group 1: indices 0, 1, 2 (W_1, W_2, W_3 to Y_1, Y_2, Y_3)
     for i in range(3):
         for j in range(3):
             if i != j:  # Skip direct connections
                 draw_arrow(ax1, w_positions[i], y_positions[j], INTERFERENCE_COLOR)
 
-    # Group 2: indices 3, 4, 5 (Wₙ₋₂, Wₙ₋₁, Wₙ to Yₙ₋₂, Yₙ₋₁, Yₙ)
+    # Group 2: indices 3, 4, 5 (same logic as above)
     for i in range(3, 6):
         for j in range(3, 6):
             if i != j:  # Skip direct connections
                 draw_arrow(ax1, w_positions[i], y_positions[j], INTERFERENCE_COLOR)
 
     # Draw brackets to show groupings
-    # Top bracket for group 1 (W₁, W₂, W₃)
+    # Top bracket for group 1
     draw_bracket(
         ax1,
         w_positions[0][0],
@@ -206,7 +201,7 @@ if __name__ == "__main__":
         "Group 1",
     )
 
-    # Bottom bracket for group 2 (Wₙ₋₂, Wₙ₋₁, Wₙ)
+    # Bottom bracket for group 2
     draw_bracket(
         ax1,
         w_positions[3][0],
@@ -247,9 +242,6 @@ if __name__ == "__main__":
         draw_arrow(ax2, w_positions[i], y_positions[i], DIRECT_COLOR)
 
     # Draw dotted lines to indicate continuation
-    # (Removed lines between W₂-W₃ and Y₂-Y₃ as requested)
-
-    # Draw dotted lines in the gap
     draw_dotted_line(
         ax2,
         (w_positions[2][0], w_positions[2][1] - 0.35),
@@ -260,8 +252,6 @@ if __name__ == "__main__":
         (y_positions[2][0], y_positions[2][1] - 0.35),
         (y_positions[3][0], y_positions[3][1] + 0.35),
     )
-
-    # (Removed lines between Wₙ₋₂-Wₙ₋₁ and Yₙ₋₂-Yₙ₋₁ as requested)
 
     # Draw orange arrows through P - all 6 W nodes to P, and P to all 6 Y nodes
     for i in range(6):

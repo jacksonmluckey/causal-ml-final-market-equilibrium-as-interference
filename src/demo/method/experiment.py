@@ -69,7 +69,7 @@ class ExperimentParams:
     rng_seed : Optional[int]
         Random seed for reproducibility
     store_detailed_data : bool
-        Whether to store individual-level data (Z_i, ε_i arrays)
+        Whether to store individual-level data ($Z_i$, $\epsilon_i$ arrays)
     """
 
     T: int
@@ -261,8 +261,8 @@ def compute_equilibrium_allocation(
     """
     Compute equilibrium supply and allocation at payment p.
 
-    Solves for equilibrium supply μ (fraction of suppliers who activate)
-    and computes expected allocation q = ω(d_a/μ) per active supplier.
+    Solves for equilibrium supply $\mu$ (fraction of suppliers who activate)
+    and computes expected allocation $q = \omega(d_a/ \mu)$ per active supplier.
 
     Parameters
     ----------
@@ -273,7 +273,7 @@ def compute_equilibrium_allocation(
     supplier_params : SupplierParameters
         Supplier choice model parameters
     allocation : AllocationFunction
-        Allocation function ω
+        Allocation function $\omega$
 
     Returns
     -------
@@ -296,7 +296,7 @@ def compute_weighted_average_payment(timepoints: List) -> float:
     """
     Compute weighted average payment per Corollary 8.
 
-    Formula: p̄_T = (2/T(T+1)) Σ_{t=1}^T t·p_t
+    $p_T = (2/T(T+1)) \sum_{t=1}^{T} t p_t$
 
     This gives more weight to later payments as the algorithm converges,
     providing a better estimate of the optimal payment than a simple average.
@@ -397,7 +397,7 @@ def run_global_one_timepoint(
     revenue_fn : RevenueFunction
         Platform revenue function
     allocation : AllocationFunction
-        The allocation function ω
+        The allocation function $\omega$
     supplier_params : SupplierParameters
         Supplier behavior parameters
     t : int

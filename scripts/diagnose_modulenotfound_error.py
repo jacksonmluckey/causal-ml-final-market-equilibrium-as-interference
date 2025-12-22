@@ -79,7 +79,7 @@ def main():
         )
         print("=" * 60)
     else:
-        print("✗ Import still failed after touching pyproject.toml")
+        print("Failure: Import still failed after touching pyproject.toml")
         print(f"Error: {output.strip()}")
         print("\n" + "=" * 60)
         print("The ModuleNotFoundError is unrelated to pyproject.toml timestamps.")

@@ -40,7 +40,7 @@ class ChoiceFunction:
     f : Callable[[float, float], float]
         f(x, b) returns P(Z=1 | expected_revenue=x, private_feature=b)
     f_prime : Optional[Callable[[float, float], float]]
-        Derivative ∂f/∂x(x, b)
+        Derivative $\partial f/\partial x(x, b)$
     name : str
         Descriptive name
     """
@@ -129,7 +129,7 @@ def create_logistic_choice(alpha: float = 1.0) -> ChoiceFunction:
         prob = f(x, b)
         return alpha * prob * (1.0 - prob)
 
-    return ChoiceFunction(f=f, f_prime=f_prime, name=f"Logistic ($\\alpha$={alpha})")
+    return ChoiceFunction(f=f, f_prime=f_prime, name=f"Logistic ($\alpha$={alpha})")
 
 
 @dataclass
@@ -188,7 +188,7 @@ def create_lognormal_costs(
 
     return PrivateFeatureDistribution(
         sample=sample,
-        name=f"LogNormal($\\mu$={log_mean}, $\\sigma$={log_std}, scale={scale})",
+        name=f"LogNormal($\mu$={log_mean}, $\sigma$={log_std}, scale={scale})",
     )
 
 
