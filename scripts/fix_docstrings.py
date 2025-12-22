@@ -26,7 +26,7 @@ def fix_docstrings(file_path: Path) -> None:
     result_lines = []
     in_docstring = False
 
-    for line in lines:
+    for line_num, line in enumerate(lines):
         # Check if line contains """
         triple_quote_count = line.count('"""')
 
@@ -53,6 +53,7 @@ def fix_docstrings(file_path: Path) -> None:
         else:
             # More than 2 triple quotes on one line - unusual, just add as-is
             result_lines.append(line)
+            print(f'{file_path}: Line {line_num} has more than 2 triple quotes')
 
     result_content = "\n".join(result_lines)
     file_path.write_text(result_content)
@@ -60,8 +61,8 @@ def fix_docstrings(file_path: Path) -> None:
 
 
 def main():
-    """Fix all Python files in src/demo/."""
-    src_dir = Path(__file__).parent.parent / "src" / "demo"
+    """Fix all Python files in src/demo/method/"""
+    src_dir = Path(__file__).parent.parent / "src" / "demo" / "method"
 
     python_files = list(src_dir.glob("*.py"))
 

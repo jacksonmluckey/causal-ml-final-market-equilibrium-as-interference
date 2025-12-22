@@ -71,7 +71,7 @@ def fit_utility_spline(
 def find_best_payment_from_history(
     payment_history: List[float], utility_history: List[float]
 ) -> float:
-    """
+    r"""
     Find the payment with highest observed utility.
 
     Parameters
@@ -100,7 +100,7 @@ def sample_exploration_payment(
     step_size_pct: float,
     rng: np.random.Generator,
 ) -> float:
-    """
+    r"""
     Sample a new payment for exploration.
 
     Parameters
@@ -153,7 +153,7 @@ def compute_epsilon(
     t: int,
     T: int,
 ) -> float:
-    """
+    r"""
     Compute epsilon at timestep t based on decay schedule.
 
     Parameters

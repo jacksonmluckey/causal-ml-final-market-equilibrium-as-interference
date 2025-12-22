@@ -18,13 +18,13 @@ def generate_module_docs(src_dir: Path, api_dir: Path) -> list[str]:
     Generate Markdown files for all Python modules in src/demo/.
 
     Args:
-        src_dir: Path to src/demo/ directory
+        src_dir: Path to module directory
         api_dir: Path to docsrc/api/ directory
 
     Returns:
         List of module names (without .py extension)
     """
-    # Find all Python files in src/demo/
+    # Find all Python files in module directory
     python_files = sorted(src_dir.glob("*.py"))
 
     # Filter out __init__.py and __pycache__
@@ -46,11 +46,10 @@ def generate_module_docs(src_dir: Path, api_dir: Path) -> list[str]:
 
         md_content = f"""# {title}
 
-::: demo.{module_name}
+::: demo.method.{module_name}
 """
 
         md_file.write_text(md_content)
-        print(f"  Generated {md_file.relative_to(api_dir.parent)}")
 
     return modules
 
@@ -92,10 +91,12 @@ def main():
     docsrc_dir = project_root / "docsrc"
     api_dir = docsrc_dir / "content" / "api"
     site_dir = project_root / "docs"
-    src_dir = project_root / "src" / "demo"
+    src_dir = project_root / "src" / "demo" / "method"
 
     # Generate module documentation files
     modules = generate_module_docs(src_dir, api_dir)
+
+    print(modules)
 
     # Generate mkdocs.yml configuration
     # This allows for automatically discovering the modules in src/demo/

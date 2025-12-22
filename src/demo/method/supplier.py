@@ -188,7 +188,7 @@ def create_lognormal_costs(
 
     return PrivateFeatureDistribution(
         sample=sample,
-        name=f"LogNormal($\mu$={log_mean}, $\sigma$={log_std}, scale={scale})",
+        name=fr"LogNormal($\mu$={log_mean}, $\sigma$={log_std}, scale={scale})",
     )
 
 

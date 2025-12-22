@@ -107,7 +107,7 @@ class ExperimentParams:
 
 @dataclass
 class DemandConfig:
-    """
+    r"""
     Extracted demand configuration from ExperimentParams.
 
     Attributes
@@ -124,7 +124,7 @@ class DemandConfig:
 
 @dataclass
 class CurrentDemandState:
-    """
+    r"""
     Current demand state for a timepoint.
 
     Attributes
@@ -141,7 +141,7 @@ class CurrentDemandState:
 
 @dataclass
 class EquilibriumAllocation:
-    """
+    r"""
     Equilibrium supply and allocation quantities.
 
     Attributes
@@ -164,7 +164,7 @@ class EquilibriumAllocation:
 def setup_rng(
     rng: Optional[np.random.Generator] = None, rng_seed: Optional[int] = None
 ) -> np.random.Generator:
-    """
+    r"""
     Initialize random number generator.
 
     If an existing RNG is provided, returns it as-is.
@@ -191,7 +191,7 @@ def setup_rng(
 
 
 def extract_demand_from_params(params: ExperimentParams) -> DemandConfig:
-    """
+    r"""
     Extract demand configuration from ExperimentParams.
 
     Handles the union type of params.demand which can be either
@@ -218,7 +218,7 @@ def sample_current_state(
     d_a: Optional[float],
     rng: np.random.Generator,
 ) -> CurrentDemandState:
-    """
+    r"""
     Sample or retrieve current demand state.
 
     If demand_params provided, samples a new stochastic state.
@@ -258,7 +258,7 @@ def compute_equilibrium_allocation(
     supplier_params: SupplierParameters,
     allocation: AllocationFunction,
 ) -> EquilibriumAllocation:
-    """
+    r"""
     Compute equilibrium supply and allocation at payment p.
 
     Solves for equilibrium supply $\mu$ (fraction of suppliers who activate)
@@ -293,7 +293,7 @@ def compute_equilibrium_allocation(
 
 
 def compute_weighted_average_payment(timepoints: List) -> float:
-    """
+    r"""
     Compute weighted average payment per Corollary 8.
 
     $p_T = (2/T(T+1)) \sum_{t=1}^{T} t p_t$
@@ -328,7 +328,7 @@ def build_experiment_results(
     final_payment: float,
     weighted_average_payment: Optional[float] = None,
 ):
-    """
+    r"""
     Build ExperimentResults from timepoint data.
 
     Computes aggregate metrics from individual timepoints:

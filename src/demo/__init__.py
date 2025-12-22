@@ -1,4 +1,4 @@
-"""
+r"""
 demo package - re-exports from demo.method
 """
 

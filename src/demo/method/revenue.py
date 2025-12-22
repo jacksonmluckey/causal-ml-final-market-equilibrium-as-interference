@@ -76,4 +76,4 @@ def create_linear_revenue(
         r"""$dr/dx = \gamma \cdot \omega'(x)$"""
         return gamma * allocation.derivative(x)
 
-    return RevenueFunction(r=r, r_prime=r_prime, name=f"Linear ($\gamma$={gamma})")
+    return RevenueFunction(r=r, r_prime=r_prime, name=fr"Linear ($\gamma$={gamma})")
