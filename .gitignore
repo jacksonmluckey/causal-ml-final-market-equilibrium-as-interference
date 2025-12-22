@@ -16,6 +16,9 @@ wheels/
 *.html
 *.pdf
 
+# Exception for submission
+!market-equilibrium-as-interference.*
+
 # Documentation build output
 docs/
 docsrc/content/api/
@@ -32,9 +35,12 @@ project-rubric.md
 # Claude Code stuff
 CLAUDE.md
 
-# Output
-data/*.csv
-figures/*.png
+# Output -- will actually include for now for upload for Drew
+#data/*.csv
+#figures/*.png
+
+# Quarto output
+**.quarto/
 
 # LaTeX files
 **.log
